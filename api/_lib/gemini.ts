@@ -23,7 +23,12 @@ interface Step {
 }
 
 export async function interact(body: unknown, timeoutMs = 20_000): Promise<{ steps?: Step[] }> {
-  const key = process.env.GEMINI_API_KEY
+  // Trim: a key pasted into `vercel env add` can carry a trailing newline or quotes.
+  const key = (process.env.GEMINI_API_KEY || '')
+    .trim()
+    .replace(/^GEMINI_API_KEY\s*=\s*/, '')
+    .replace(/^["']|["']$/g, '')
+    .trim()
   if (!key) throw new GeminiError('AI not configured', 503)
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), timeoutMs)
@@ -34,7 +39,19 @@ export async function interact(body: unknown, timeoutMs = 20_000): Promise<{ ste
       body: JSON.stringify(body),
       signal: ctrl.signal,
     })
-    if (!res.ok) throw new GeminiError(`Gemini HTTP ${res.status}`, res.status === 429 ? 429 : 502)
+    if (!res.ok) {
+      // Google's error text never contains the key; log its status + message (truncated) for debugging.
+      const detail = await res.text().then((t) => {
+        try {
+          const j = JSON.parse(t)
+          const e = Array.isArray(j) ? j[0]?.error : j.error
+          return e ? `${e.status ?? ''} ${String(e.message ?? '').slice(0, 160)}` : t.slice(0, 160)
+        } catch {
+          return t.slice(0, 120)
+        }
+      })
+      throw new GeminiError(`Gemini HTTP ${res.status} ${detail}`, res.status === 429 ? 429 : 502)
+    }
     return (await res.json()) as { steps?: Step[] }
   } catch (e) {
     if (e instanceof GeminiError) throw e
