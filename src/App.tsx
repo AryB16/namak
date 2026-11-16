@@ -53,7 +53,7 @@ function StatusBanner() {
 
 function Logo() {
   return (
-    <a href="#tomorrow" className="flex items-center gap-2" aria-label="Namak home">
+    <a href="#tomorrow" className="flex min-h-11 items-center gap-2" aria-label="Namak home">
       <img src="/favicon.svg" alt="" width={26} height={26} className="rounded-[8px]" />
       <span className="text-[17px] font-semibold tracking-tight">Namak</span>
     </a>
@@ -107,14 +107,13 @@ export default function App() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <a href="#why" className="rounded-full px-3 py-2 text-[13px] font-medium text-ink/70 md:hidden">
+            <a href="#why" className="inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-ink/70 md:hidden">
               Why it works
             </a>
-            <a
-              href="#tour"
-              className="rounded-full bg-ink px-3.5 py-1.5 text-[12px] font-semibold text-white transition-transform hover:scale-[1.03]"
-            >
-              Tour
+            <a href="#tour" className="group inline-flex min-h-11 items-center">
+              <span className="rounded-full bg-ink px-3.5 py-1.5 text-[12px] font-semibold text-white transition-transform group-hover:scale-[1.03]">
+                Tour
+              </span>
             </a>
           </div>
         </div>

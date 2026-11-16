@@ -10,7 +10,7 @@ import { dayLabel, int, litres, minutes, one, pct, weekday } from '../lib/format
 import { useApp } from '../state'
 
 export default function Tomorrow() {
-  const { farm, planDays, forecast } = useApp()
+  const { farm, planDays, forecast, online } = useApp()
   const plan = useMemo(() => (planDays.length ? planFarm(farm, planDays) : null), [farm, planDays])
 
   if (!plan) return <SkeletonTomorrow />
@@ -25,7 +25,7 @@ export default function Tomorrow() {
   const last = plan.schedule[plan.schedule.length - 1]
   const sunrise = day0.sunrise ?? '06:15'
   const anyDebt = plan.valves.some((v) => v.eceNow > v.target + 0.01)
-  const live = forecast?.source === 'live'
+  const live = online && forecast?.source === 'live'
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -95,7 +95,7 @@ export default function Tomorrow() {
       </Stagger>
 
       <Reveal>
-        <WeekPlan valves={plan.valves} />
+        <WeekPlan valves={plan.valves} live={live} />
       </Reveal>
     </div>
   )
@@ -166,7 +166,7 @@ function ValveCard({ vp, slot }: { vp: ValvePlan; slot?: ValveSchedule }) {
   )
 }
 
-function WeekPlan({ valves }: { valves: ValvePlan[] }) {
+function WeekPlan({ valves, live }: { valves: ValvePlan[]; live: boolean }) {
   const days = valves[0]?.days ?? []
   const maxEt0 = Math.max(...days.map((d) => d.et0), 1)
   return (
@@ -178,7 +178,7 @@ function WeekPlan({ valves }: { valves: ValvePlan[] }) {
             Minutes per valve. <span className="font-semibold text-[#8a5413]">Amber</span> = salt-debt repayment, placed on the coolest days.
           </p>
         </div>
-        <SourceTag>Live forecast · Open-Meteo</SourceTag>
+        <SourceTag>{live ? 'Live forecast · Open-Meteo' : 'Cached forecast · Open-Meteo'}</SourceTag>
       </div>
       <div className="mt-6 -mx-2 overflow-x-auto">
         <table className="w-full min-w-[340px] text-center text-[15px]">
