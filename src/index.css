@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sand-50: #faf6ef;
+  --color-sand-100: #f4efe6;
+  --color-sand-200: #e9dfcc;
+  --color-sand-300: #d9c8a8;
+  --color-sand-500: #a88b5c;
+  --color-sand-700: #6b5638;
+  --color-ink: #1d1a16;
+  --color-teal-water: #0e4a4f;
+  --color-teal-deep: #08343a;
+  --color-teal-light: #2f8f8a;
+  --color-salt: #fffdf8;
+  --color-amber-warn: #d98b2b;
+  --color-red-debt: #b8432f;
+  --color-green-ok: #4d8b4a;
+
+  --font-display: "Fraunces Variable", "Fraunces", Georgia, serif;
+  --font-sans: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html {
+  background: var(--color-sand-100);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
