@@ -7,12 +7,16 @@ import { forecastUrl, parseDaily } from '../src/data/weather.ts'
 import { planFarm } from '../src/engine/farm.ts'
 import { LANGS } from '../src/lib/instruction.ts'
 import { instructUrl, instructionPlan, voiceUrl } from '../src/lib/worker.ts'
+import demo from '../src/data/demoAssets.json' with { type: 'json' }
 
 const base = process.argv[2] ?? 'https://namak-phi.vercel.app'
 const fc = await (await fetch(forecastUrl(DEMO_FARM.lat, DEMO_FARM.lon))).json()
 const days = parseDaily(fc.daily).slice(1, 8)
-const plan = instructionPlan(planFarm(DEMO_FARM, days))
-console.log('plan for', plan.date, JSON.stringify(plan.valves.map((v) => `${v.n}:${v.minutes}m@${v.start}`)))
+// The farmer confirms one of the three example meter readings before the voice message is made, so warm each of them.
+const readings = Object.values(demo.readings).map((r) => Math.round(r.ec * 100) / 100)
+for (const ec of readings) {
+const plan = instructionPlan(planFarm({ ...DEMO_FARM, wellEC: ec }, days))
+console.log(`well ${ec} → plan for`, plan.date, JSON.stringify(plan.valves.map((v) => `${v.n}:${v.minutes}m@${v.start}`)))
 
 for (const l of LANGS) {
   let t0 = Date.now()
@@ -32,4 +36,5 @@ for (const l of LANGS) {
     `text ${String(tText).padStart(5)} ms [${cText}]`,
     `voice ${String(Date.now() - t0).padStart(5)} ms [${v.headers.get('x-vercel-cache') ?? '-'}] ${v.status} ${bytes} B`,
   )
+}
 }

@@ -12,7 +12,12 @@ import { DEMO_FARM } from '../data/demoFarm'
 
 export type DemoEventType = 'sweep-slider' | 'send-note' | 'read-sample' | 'play-replay'
 
+// Screens load on demand, so an action may be sent before its screen exists. Keep the latest one for a few seconds and
+// let the screen pick it up when it mounts.
+let pending: { type: DemoEventType; at: number } | null = null
+
 export function emitDemo(type: DemoEventType) {
+  pending = { type, at: Date.now() }
   window.dispatchEvent(new CustomEvent('namak:demo', { detail: type }))
 }
 
@@ -22,9 +27,21 @@ export function useDemoEvent(type: DemoEventType, handler: () => void) {
   h.current = handler
   useEffect(() => {
     const on = (e: Event) => {
-      if ((e as CustomEvent).detail === type) h.current()
+      if ((e as CustomEvent).detail === type) {
+        pending = null
+        h.current()
+      }
     }
     window.addEventListener('namak:demo', on)
+    // Mounted after the action was sent? Run it now (if it is recent).
+    if (pending && pending.type === type && Date.now() - pending.at < 5000) {
+      pending = null
+      const t = window.setTimeout(() => h.current(), 250)
+      return () => {
+        window.clearTimeout(t)
+        window.removeEventListener('namak:demo', on)
+      }
+    }
     return () => window.removeEventListener('namak:demo', on)
   }, [type])
 }
@@ -44,8 +61,8 @@ export const STEPS: Step[] = [
   { route: 'compare', target: 'slider', caption: 'The well water here is salty. Watch what happens as it gets saltier: more and more water is needed just to wash the salt away.', ms: 9000, event: 'sweep-slider', eventDelay: 900 },
   { route: 'compare', target: 'counters', caption: 'Over a real year, Namak uses about 19% less water than the worker’s usual routine, and keeps every crop healthy.', ms: 6000 },
   { route: 'replay', target: 'replay-chart', caption: 'We replayed last year with real weather. Orange is the usual routine and teal is Namak. With the routine, salt piles up in the soil all summer.', ms: 9000, event: 'play-replay', eventDelay: 300 },
-  { route: 'worker', target: 'phone', caption: 'The worker gets the plan as a short voice message in their own language, so no reading is needed.', ms: 9000, event: 'send-note', eventDelay: 700 },
-  { route: 'worker', target: 'ec', caption: 'Once a week the worker sends a photo of a cheap salt meter. AI reads the number, the owner confirms it, and the plan updates.', ms: 13000, event: 'read-sample', eventDelay: 700 },
+  { route: 'worker', target: 'phone', caption: 'On the farmer’s phone, Namak asks for a photo of a cheap salt meter in well water. Gemini reads the number, the farmer confirms, and the plan updates.', ms: 10000, event: 'read-sample', eventDelay: 600 },
+  { route: 'worker', target: 'phone', caption: 'Then Gemini writes tomorrow’s watering times in the farmer’s language and reads them out as a voice message.', ms: 12000, event: 'send-note', eventDelay: 300 },
 ]
 
 interface DemoCtx {

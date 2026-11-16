@@ -46,18 +46,18 @@ import { instructionMatchesPlan, LANGS } from '../lib/instruction'
 
 describe('saved demo AI content', () => {
   const days = (fc.days as WeatherDay[]).filter((d) => d.date >= demoAssets.demoDay).slice(0, 7)
-  const plan = instructionPlan(planFarm(DEMO_FARM, days))
-  it('matches the plan the engine makes today for the demo day (else re-run scripts/make-demo-assets.mts)', () => {
-    expect(plan).toEqual(demoAssets.plan)
-  })
-  it('has a message for every language, and every message carries the plan’s exact numbers', () => {
-    for (const l of LANGS) {
-      const v = (demoAssets.voice as Record<string, { text: string }>)[l.id]
-      expect(v).toBeTruthy()
-      expect(instructionMatchesPlan(v.text, plan)).toBe(true)
-    }
-  })
-  it('has a saved reading for each example photo, in range', () => {
-    for (const r of Object.values(demoAssets.readings)) expect(r.ec).toBeGreaterThan(0)
-  })
+  for (const [id, entry] of Object.entries(demoAssets.byReading)) {
+    const r = (demoAssets.readings as Record<string, { ec: number }>)[id]
+    const plan = instructionPlan(planFarm({ ...DEMO_FARM, wellEC: Math.round(r.ec * 100) / 100 }, days))
+    it(`${id}: saved plan matches the engine today (else re-run scripts/make-demo-assets.mts)`, () => {
+      expect(plan).toEqual(entry.plan)
+    })
+    it(`${id}: a message in every language, each carrying the plan’s exact numbers`, () => {
+      for (const l of LANGS) {
+        const v = (entry.voice as Record<string, { text: string }>)[l.id]
+        expect(v).toBeTruthy()
+        expect(instructionMatchesPlan(v.text, plan)).toBe(true)
+      }
+    })
+  }
 })

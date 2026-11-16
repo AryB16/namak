@@ -323,7 +323,7 @@ function ValveSection() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
   const phoneY = useTransform(scrollYProgress, [0, 1], [120, -80])
   const phoneRot = useTransform(scrollYProgress, [0, 0.5], [-6, 0])
-  const texts = Object.fromEntries(Object.entries(demoAssets.voice).map(([k, v]) => [k, v.text])) as Record<string, string>
+  const texts = Object.fromEntries(Object.entries(demoAssets.byReading['ec-3.82-mscm'].voice).map(([k, v]) => [k, v.text])) as Record<string, string>
   return (
     <section ref={ref} data-tone="dark" className="overflow-hidden bg-night px-6 py-28 md:py-40">
       <div className="mx-auto grid max-w-[1080px] items-center gap-14 md:grid-cols-2">

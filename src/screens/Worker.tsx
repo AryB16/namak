@@ -1,303 +1,278 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Card, Eyebrow, SourceTag } from '../components/ui'
-import { Term } from '../components/explain'
-import { IconPause, IconPlay, IconSend } from '../components/icons'
+/**
+ * The farmer's phone: a chat with Namak, the farm assistant (AI by Google Gemini).
+ *   1. Namak asks for a photo of the salt meter in a cup of well water.
+ *   2. Gemini reads the meter; the farmer confirms the number; Namak updates tomorrow's plan.
+ *   3. The farmer picks a language; Gemini writes the plan and records it as a voice message.
+ * On the demo day the Gemini answers were made once and saved (instant, no AI calls). Otherwise each answer is made
+ * once by Gemini and shared through the CDN cache.
+ */
+import { AnimatePresence, m } from 'motion/react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Card, Eyebrow, SourceTag } from '../components/ui'
+import { IconPause, IconPlay } from '../components/icons'
+import { EASE } from '../components/motion'
 import { CROPS } from '../engine/crops'
 import { planFarm, type FarmPlan } from '../engine/farm'
 import type { Farm } from '../engine/plan'
-import { LANGS, templateInstruction, type Lang } from '../lib/instruction'
-import { dayLabel, int, one, pct } from '../lib/format'
-import {
-  browserVoiceFor,
-  cachedInstruction,
-  instructionPlan,
-  prepareNote,
-  speakInBrowser,
-  type ECRead,
-  type Instruction,
-} from '../lib/worker'
-import type { InstructionPlan } from '../lib/instruction'
+import { LANGS, type InstructionPlan, type Lang } from '../lib/instruction'
+import { int, minutes as fmtMin, one, pct } from '../lib/format'
+import { browserVoiceFor, fetchInstruction, fetchVoice, instructionPlan, speakInBrowser, type ECRead } from '../lib/worker'
 import { useApp } from '../state'
 import { useDemoEvent } from '../demo/Demo'
 import demo from '../data/demoAssets.json'
 
-type VoiceSource = 'recorded' | 'gemini' | 'browser' | 'none'
-type Step = 'idle' | 'writing' | 'recording' | 'ready'
-
-/**
- * Example salt-meter photos. Their AI readings were made once (Gemini vision, scripts/make-demo-assets.mts) and saved,
- * so picking one always gives the same, instant result.
- */
-const SAMPLES = (['ec-3.82-mscm', 'ec-4210-uscm', 'ec-2.64-mscm'] as const).map((id) => {
-  const r = (demo.readings as Record<string, { raw: number; unit: string; ec: number; display: string; confidence: string }>)[id]
-  return { id, src: `/samples/${id}.svg`, label: `${r.raw} ${r.unit}`, reading: r as ECRead }
+type SampleId = 'ec-3.82-mscm' | 'ec-4210-uscm' | 'ec-2.64-mscm'
+const SAMPLES = (['ec-3.82-mscm', 'ec-4210-uscm', 'ec-2.64-mscm'] as SampleId[]).map((id) => {
+  const r = (demo.readings as Record<string, ECRead & { raw: number; unit: string }>)[id]
+  return { id, src: `/samples/${id}.svg`, label: `${r.raw} ${r.unit}`, reading: r }
 })
 
-const DEMO_PLAN = JSON.stringify(demo.plan)
+type ByReading = Record<string, { plan: InstructionPlan; voice: Record<string, { text: string; source: 'gemini' | 'template' }> }>
 
-/** The recorded AI message + voice for the demo day, if this plan is the demo day's plan. */
-function recordedNote(p: InstructionPlan, lang: Lang): { instr: Instruction; audioUrl: string } | null {
-  if (JSON.stringify(p) !== DEMO_PLAN) return null
-  const v = (demo.voice as Record<string, { text: string; source: 'gemini' | 'template' }>)[lang]
-  return v ? { instr: { text: v.text, source: v.source }, audioUrl: `/demo/voice-${lang}.m4a` } : null
+/** Saved Gemini message + voice for this exact plan (demo day), if there is one. */
+function savedVoice(sample: SampleId | null, p: InstructionPlan, lang: Lang) {
+  if (!sample) return null
+  const entry = (demo.byReading as ByReading)[sample]
+  if (!entry || JSON.stringify(entry.plan) !== JSON.stringify(p)) return null
+  const v = entry.voice[lang]
+  return v ? { text: v.text, url: `/demo/voice-${sample}-${lang}.m4a` } : null
 }
 
+type Stage = 'ask-photo' | 'reading' | 'confirm' | 'ask-lang' | 'generating' | 'done'
+type Msg =
+  | { id: number; from: 'bot' | 'farmer'; kind: 'text'; text: ReactNode }
+  | { id: number; from: 'farmer'; kind: 'photo'; src: string }
+  | { id: number; from: 'bot'; kind: 'thinking'; label: string }
+  | { id: number; from: 'bot'; kind: 'voice'; text: string; url: string | null; lang: Lang; browser: boolean }
+
+type NewMsg = Msg extends unknown ? (Msg extends infer T ? (T extends Msg ? Omit<T, 'id'> : never) : never) : never
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
 export default function Worker() {
-  const { farm, setFarm, planDays, addReading, online } = useApp()
-  const [lang, setLang] = useState<Lang>(() => {
-    try {
-      return (localStorage.getItem('namak.lang') as Lang) || 'hi'
-    } catch {
-      return 'hi'
-    }
-  })
-  const plan = useMemo(() => (planDays.length ? planFarm(farm, planDays) : null), [farm, planDays])
-  const iplan = useMemo(() => (plan ? instructionPlan(plan) : null), [plan])
-  const isRecorded = !!(iplan && recordedNote(iplan, lang))
-
-  const [step, setStep] = useState<Step>('idle')
-  const [instr, setInstr] = useState<Instruction | null>(null)
-  const [audioUrl, setAudioUrl] = useState<string | null>(null)
-  const [voiceSrc, setVoiceSrc] = useState<VoiceSource>('none')
-  const [sentAt, setSentAt] = useState<string>('')
-
-  const [photo, setPhoto] = useState<string | null>(null)
-  const [reading, setReading] = useState<'idle' | 'reading' | 'done'>('idle')
-  const [read, setRead] = useState<ECRead | null>(null)
+  const { farm, setFarm, planDays, addReading, online, demoDay } = useApp()
+  const nextId = useRef(1)
+  const [msgs, setMsgs] = useState<Msg[]>(() => initialMsgs())
+  const [stage, setStage] = useState<Stage>('ask-photo')
+  const [pending, setPending] = useState<(typeof SAMPLES)[number] | null>(null)
+  const [sample, setSample] = useState<SampleId | null>(null)
   const [diff, setDiff] = useState<{ before: FarmPlan; after: FarmPlan; from: number; to: number } | null>(null)
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('namak.lang', lang)
-    } catch {
-      /* ignore */
-    }
-    setStep('idle')
-    setInstr(null)
-    setAudioUrl(null)
-    setVoiceSrc('none')
-  }, [lang])
-
-  // Guided demo: send the note, then pick the first example photo and confirm it automatically.
   const autoConfirm = useRef(false)
-  useDemoEvent('send-note', () => void send())
-  useDemoEvent('read-sample', () => {
-    autoConfirm.current = true
-    analyse(SAMPLES[0])
-  })
+  const scroller = useRef<HTMLDivElement>(null)
+  const farmRef = useRef(farm)
+  farmRef.current = farm
+
+  function initialMsgs(): Msg[] {
+    return [
+      { id: 0, from: 'bot', kind: 'text', text: 'Hi! I’m Namak, your farm assistant.' },
+      {
+        id: -1,
+        from: 'bot',
+        kind: 'text',
+        text: 'Before I send tomorrow’s watering times, please send me a photo of your salt meter dipped in a cup of well water.',
+      },
+    ]
+  }
+
+  const push = (m: NewMsg) => {
+    const id = nextId.current++
+    setMsgs((x) => [...x, { ...m, id } as Msg])
+    return id
+  }
+  const replace = (id: number, m: NewMsg) => setMsgs((x) => x.map((y) => (y.id === id ? ({ ...m, id } as Msg) : y)))
+  const relabel = (id: number, label: string) => setMsgs((x) => x.map((y) => (y.id === id && y.kind === 'thinking' ? { ...y, label } : y)))
+
   useEffect(() => {
-    if (!read || !autoConfirm.current) return
-    autoConfirm.current = false
-    const t = setTimeout(() => apply(read.ec), 1600)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [read])
+    scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' })
+  }, [msgs])
 
-  if (!plan || !iplan) return <Card>Loading tomorrow’s plan…</Card>
-  const L = LANGS.find((l) => l.id === lang)!
+  const plan = useMemo(() => (planDays.length ? planFarm(farm, planDays) : null), [farm, planDays])
 
-  async function send() {
-    if (!iplan) return
-    setSentAt(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
-    // Demo day: the message and voice were made once by AI and saved — play them straight away.
-    const rec = recordedNote(iplan, lang)
-    if (rec) {
-      setInstr(rec.instr)
-      setAudioUrl(rec.audioUrl)
-      setVoiceSrc('recorded')
-      setStep('ready')
+  // 1. Farmer sends a meter photo -> Gemini reads it.
+  async function sendPhoto(s: (typeof SAMPLES)[number]) {
+    if (stage !== 'ask-photo') return
+    setStage('reading')
+    push({ from: 'farmer', kind: 'photo', src: s.src })
+    await wait(350)
+    const t = push({ from: 'bot', kind: 'thinking', label: 'Gemini is reading the meter…' })
+    // The reading of this example photo was made once by Gemini and saved.
+    await wait(1600)
+    replace(t, {
+      from: 'bot',
+      kind: 'text',
+      text: (
+        <>
+          The meter shows <strong>{s.label}</strong>
+          {s.reading.unit === 'µS/cm' ? <> — that’s <strong>{one(s.reading.ec)}</strong> on Namak’s scale</> : null}. Is that right?
+        </>
+      ),
+    })
+    setPending(s)
+    setStage('confirm')
+  }
+
+  // 2. Farmer confirms -> Namak updates tomorrow's plan.
+  async function confirm(yes: boolean) {
+    if (stage !== 'confirm' || !pending) return
+    if (!yes) {
+      push({ from: 'farmer', kind: 'text', text: 'No, I’ll send another photo.' })
+      await wait(400)
+      push({ from: 'bot', kind: 'text', text: 'No problem — please send another photo.' })
+      setPending(null)
+      setStage('ask-photo')
       return
     }
-    // Live plan: show the ready-made text at once; swap in the AI wording and voice when they arrive.
-    const cached = cachedInstruction(iplan, lang)
-    setInstr(cached ?? { text: templateInstruction(iplan, lang), source: 'template' })
-    setAudioUrl(null)
-    setStep('writing')
-    const job = prepareNote(iplan, lang, online)
-    const first = await Promise.race([job, new Promise<null>((r) => setTimeout(() => r(null), 50))])
-    if (!first) setStep('recording')
-    const { instr: final, audioUrl: url } = first ?? (await job)
-    setInstr(final)
-    if (url) {
-      setAudioUrl(url)
-      setVoiceSrc('gemini')
-    } else setVoiceSrc(browserVoiceFor(lang) ? 'browser' : 'none')
-    setStep('ready')
-  }
-
-  function analyse(s: (typeof SAMPLES)[number]) {
-    setPhoto(s.src)
-    setRead(null)
-    setDiff(null)
-    setReading('reading')
-    // The reading was made once by AI and saved; a short pause shows the "reading" step.
-    window.setTimeout(() => {
-      setRead(s.reading)
-      setReading('done')
-    }, 1300)
-  }
-
-  function apply(ec: number) {
-    const before = planFarm(farm, planDays)
-    const next: Farm = { ...farm, wellEC: Math.round(ec * 100) / 100 }
+    push({ from: 'farmer', kind: 'text', text: 'Yes, that’s right.' })
+    const f = farmRef.current
+    const ec = Math.round(pending.reading.ec * 100) / 100
+    const before = planFarm(f, planDays)
+    const next: Farm = { ...f, wellEC: ec }
     const after = planFarm(next, planDays)
-    setDiff({ before, after, from: farm.wellEC, to: next.wellEC })
-    addReading({ at: new Date().toISOString(), ec: next.wellEC, previous: farm.wellEC, source: 'photo' })
+    const tB = before.valves.reduce((a, v) => a + v.days[0].minutes, 0)
+    const tA = after.valves.reduce((a, v) => a + v.days[0].minutes, 0)
+    setDiff({ before, after, from: f.wellEC, to: ec })
+    addReading({ at: new Date().toISOString(), ec, previous: f.wellEC, source: 'photo' })
     setFarm(next)
-    setRead(null)
-    setReading('idle')
+    setSample(pending.id)
+    setPending(null)
+    await wait(500)
+    const change =
+      ec > f.wellEC + 0.05
+        ? `Your well is saltier than last time (${one(f.wellEC)} → ${one(ec)}), so I’ve added a little more water to wash the salt out.`
+        : ec < f.wellEC - 0.05
+          ? `Your well is less salty than last time (${one(f.wellEC)} → ${one(ec)}), so I’ve cut back a little.`
+          : 'Your well is about the same as last time.'
+    push({ from: 'bot', kind: 'text', text: `Thanks! ${change} Tomorrow’s total: ${fmtMin(tB)} → ${fmtMin(tA)}.` })
+    await wait(600)
+    push({ from: 'bot', kind: 'text', text: 'Which language should I send tomorrow’s plan in?' })
+    setStage('ask-lang')
   }
 
-  const busy = step === 'writing' || step === 'recording'
+  // 3. Farmer picks a language -> Gemini writes and voices the plan.
+  async function chooseLang(lang: Lang) {
+    if ((stage !== 'ask-lang' && stage !== 'done') || !plan) return
+    const L = LANGS.find((l) => l.id === lang)!
+    setStage('generating')
+    push({ from: 'farmer', kind: 'text', text: <span lang={L.bcp47}>{L.native}</span> })
+    await wait(300)
+    const t = push({ from: 'bot', kind: 'thinking', label: `Gemini is writing tomorrow’s plan in ${L.name}…` })
+    const p = instructionPlan(planFarm(farmRef.current, planDays))
+    const saved = savedVoice(sample, p, lang)
+    let text: string
+    let url: string | null
+    if (saved) {
+      await wait(1300)
+      relabel(t, `Gemini is recording the voice message…`)
+      await wait(1200)
+      text = saved.text
+      url = saved.url
+    } else {
+      const started = Date.now()
+      const ins = await fetchInstruction(p, lang)
+      await wait(Math.max(0, 900 - (Date.now() - started)))
+      relabel(t, `Gemini is recording the voice message…`)
+      const s2 = Date.now()
+      url = online ? await fetchVoice(ins.text, lang) : null
+      await wait(Math.max(0, 900 - (Date.now() - s2)))
+      text = ins.text
+    }
+    replace(t, { from: 'bot', kind: 'voice', text, url, lang, browser: !url && !!browserVoiceFor(lang) })
+    setStage('done')
+  }
+
+  function restart() {
+    setMsgs(initialMsgs())
+    setPending(null)
+    setSample(null)
+    setDiff(null)
+    setStage('ask-photo')
+  }
+
+  // Guided demo: send the first example photo and confirm it; then ask for the plan in Hindi.
+  useDemoEvent('read-sample', () => {
+    autoConfirm.current = true
+    if (stage !== 'ask-photo') restart()
+    setTimeout(() => void sendPhoto(SAMPLES[0]), stage !== 'ask-photo' ? 300 : 0)
+  })
+  useEffect(() => {
+    if (stage === 'confirm' && autoConfirm.current) {
+      autoConfirm.current = false
+      const t = setTimeout(() => void confirm(true), 1300)
+      return () => clearTimeout(t)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage])
+  useDemoEvent('send-note', () => void chooseLang('hi'))
+
+  if (!plan) return <Card>Loading tomorrow’s plan…</Card>
+
+  const step = stage === 'ask-photo' || stage === 'reading' || stage === 'confirm' ? 1 : stage === 'ask-lang' ? 2 : 3
+  const isSaved = demoDay
 
   return (
     <div className="space-y-5">
       <div>
-        <Eyebrow>Telling the worker</Eyebrow>
-        <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">Tomorrow’s plan, sent as a voice message</h1>
-        <p className="mt-3 max-w-[760px] text-[16px] leading-relaxed text-ink/75">
-          On many small farms, the owner plans the watering, but a hired worker turns the{' '}
-          <Term k="valve">valves</Term> on and off. The worker often speaks another language and may not read well. So Namak turns
-          the plan into a short spoken message in the worker’s own language.
+        <Eyebrow>The farmer’s phone</Eyebrow>
+        <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">A farm assistant in the farmer’s pocket</h1>
+        <p className="mt-3 max-w-[780px] text-[16px] leading-relaxed text-ink/75">
+          This is what the person who works on the farm sees. Namak chats with them like a supervisor would: it asks for one
+          quick check of the well water, updates the plan, and sends tomorrow’s watering times as a voice message in their own
+          language. Try it — tap the options on the phone.
         </p>
       </div>
 
-      <div>
-        <p className="mb-2 text-[14px] font-semibold text-ink/75">Choose the worker’s language:</p>
-        <div role="radiogroup" aria-label="Worker's language" className="flex flex-wrap gap-2">
-          {LANGS.map((l) => (
-            <button
-              key={l.id}
-              role="radio"
-              aria-checked={l.id === lang}
-              onClick={() => setLang(l.id)}
-              className={`min-h-11 rounded-full px-4 text-sm font-semibold transition-colors ${l.id === lang ? 'bg-ink text-white' : 'glass text-ink hover:bg-white'}`}
-            >
-              <span lang={l.bcp47}>{l.native}</span>
-              {l.id !== 'en' && <span className="ml-1.5 text-[11px] opacity-70">{l.name}</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <Button className="w-full md:hidden" onClick={send} disabled={busy}>
-        <IconSend className="h-4 w-4" /> {step === 'ready' ? 'Send again' : 'Send to the worker'}
-      </Button>
-
-      <div className="grid gap-5 md:grid-cols-[340px_1fr] md:items-start">
+      <div className="grid gap-6 md:grid-cols-[360px_1fr] md:items-start">
         <div data-demo="phone">
           <Phone>
             <ChatHeader />
-            <div className="flex min-h-[440px] flex-col gap-3 px-3 py-4" aria-live="polite">
-              <p className="mx-auto px-2.5 py-1 text-[11px] font-medium text-ink/65">Plan for {dayLabel(plan.days[0].date)}</p>
-              {step === 'idle' && !photo && (
-                <p className="mx-auto mt-16 max-w-[230px] text-center text-sm text-ink/65">
-                  Press “Send to the worker” to create tomorrow’s voice message.
-                </p>
-              )}
-              {instr && (
-                <div className="ml-auto max-w-[88%] rounded-[20px] rounded-br-md bg-teal-water p-3 text-white">
-                  <VoiceNote url={audioUrl} source={voiceSrc} busy={step !== 'ready'} text={instr.text} lang={lang} />
-                  <p dir={L.rtl ? 'rtl' : 'ltr'} lang={L.bcp47} className="mt-2 text-[14px] leading-relaxed text-white">
-                    {instr.text}
-                  </p>
-                  <p className="mt-1.5 text-right text-[11px] text-white/80">
-                    {sentAt} ·{' '}
-                    {step === 'writing'
-                      ? `writing in ${L.name}…`
-                      : step === 'recording'
-                        ? `recording the voice in ${L.name}…`
-                        : labelFor(instr, voiceSrc)}
-                  </p>
-                </div>
-              )}
-              {photo && (
-                <div className="mr-auto max-w-[78%] rounded-[20px] rounded-bl-md bg-white p-2 shadow-sm">
-                  <div className="relative overflow-hidden rounded-xl">
-                    <img src={photo} alt="Photo of a salt meter's display, sent by the worker" className="max-h-52 w-full object-cover" />
-                    {reading === 'reading' && <span className="scan-line" aria-hidden />}
-                  </div>
-                  <p className="mt-1.5 px-1 text-[13px] text-ink/80">Salt meter in well water</p>
-                  {reading === 'reading' && <p className="px-1 text-[12px] text-teal-water">Reading the number…</p>}
-                  {read && (
-                    <p className="px-1 text-[12px] font-semibold text-teal-water">
-                      Reads {read.raw} {read.unit}
-                    </p>
-                  )}
-                </div>
-              )}
-              {diff && (
-                <div className="mx-auto w-full rounded-2xl bg-ink px-3 py-2.5 text-[12px] text-white">
-                  Plan updated for saltier water ({one(diff.from)} → {one(diff.to)} dS/m). A new voice message is ready.
-                </div>
-              )}
+            <div ref={scroller} className="flex h-[440px] flex-col gap-2.5 overflow-y-auto px-3 py-4" aria-live="polite">
+              <AnimatePresence initial={false}>
+                {msgs.map((msg) => (
+                  <m.div
+                    key={msg.id}
+                    layout="position"
+                    initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.35, ease: EASE }}
+                    className={msg.from === 'farmer' ? 'ml-auto max-w-[82%]' : 'mr-auto max-w-[88%]'}
+                  >
+                    <Bubble msg={msg} />
+                  </m.div>
+                ))}
+              </AnimatePresence>
             </div>
+            <Replies
+              stage={stage}
+              onPhoto={sendPhoto}
+              onConfirm={confirm}
+              onLang={chooseLang}
+              onRestart={restart}
+            />
           </Phone>
         </div>
 
         <div className="space-y-4">
           <Card>
-            <h2 className="text-[21px] font-semibold">1. Send the plan to the worker</h2>
-            <p className="mt-1 text-[14px] leading-relaxed text-ink/70">
-              Namak writes two short sentences in {L.name} with each valve’s start time and number of minutes, then reads them
-              aloud. Before sending, it checks that every number matches the plan.
-            </p>
-            <Button className="mt-3 hidden w-full md:inline-flex" onClick={send} disabled={busy}>
-              <IconSend className="h-4 w-4" /> {step === 'ready' ? 'Send again' : 'Send to the worker'}
-            </Button>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <SourceTag>Written and voiced by AI (Google Gemini)</SourceTag>
-              {isRecorded ? (
-                <SourceTag tone="sand">Demo day: made once and saved</SourceTag>
-              ) : (
-                <SourceTag tone="sand">Made once for today’s plan, then shared</SourceTag>
-              )}
+            <h2 className="text-[21px] font-semibold">What’s happening</h2>
+            <ol className="mt-4 space-y-4">
+              <Step n={1} active={step === 1} done={step > 1} title="The farmer checks the well water">
+                Well water slowly gets saltier as it is pumped, and saltier water needs more water to wash the salt out of the soil.
+                So once a week the farmer dips a cheap salt meter (about AED 100) in a cup of well water and sends Namak a photo.
+              </Step>
+              <Step n={2} active={step === 2} done={step > 2} title="Gemini reads it, Namak updates the plan">
+                Gemini reads the number in the photo. After the farmer confirms it, Namak recalculates how long each valve
+                should run tomorrow.
+              </Step>
+              <Step n={3} active={step === 3} done={stage === 'done'} title="Gemini sends the plan as a voice message">
+                Many farm workers don’t read English and are busy in the field. So Gemini writes tomorrow’s times in the
+                farmer’s language and reads them out loud, like a message from a supervisor.
+              </Step>
+            </ol>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <SourceTag>AI: Google Gemini reads the photo, writes and speaks the message</SourceTag>
+              <SourceTag tone="sand">{isSaved ? 'Demo day: Gemini’s answers were made once and saved' : 'Each answer is made once by Gemini, then shared'}</SourceTag>
             </div>
           </Card>
-
-          <div data-demo="ec">
-            <Card>
-              <h2 className="text-[21px] font-semibold">2. Check how salty the well is</h2>
-              <p className="mt-1 text-[14px] leading-relaxed text-ink/70">
-                Well water slowly gets saltier as the well is pumped. Once a week, the worker dips a small{' '}
-                <Term k="salt meter">salt meter</Term> (about AED 100) into a cup of well water and sends a photo. Namak reads the
-                number and updates the plan. Pick one of the example photos:
-              </p>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {SAMPLES.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => analyse(s)}
-                    disabled={reading === 'reading'}
-                    className="overflow-hidden rounded-2xl ring-1 ring-sand-300 transition-shadow hover:ring-2 hover:ring-teal-water disabled:opacity-50"
-                  >
-                    <img src={s.src} alt={`Example photo of a salt meter showing ${s.label}`} className="aspect-[3/4] w-full object-cover" />
-                    <span className="block bg-salt py-1.5 text-[12px] font-semibold">{s.label}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-[12px] text-ink/65">
-                These are example photos. AI read each one once and the result was saved, so they always give the same answer.
-              </p>
-
-              {read && (
-                <div className="mt-4 rounded-2xl bg-teal-water/8 p-4 ring-1 ring-teal-water/20">
-                  <p className="text-[14px] leading-relaxed">
-                    The meter shows <strong>{read.display || `${read.raw} ${read.unit}`}</strong>
-                    {read.unit === 'µS/cm' ? `, which is ${one(read.ec)} in the units Namak uses (dS/m)` : ' (the same as dS/m)'}. Before, the
-                    well was {one(farm.wellEC)}, so the water is now{' '}
-                    {read.ec > farm.wellEC + 0.05 ? 'saltier' : read.ec < farm.wellEC - 0.05 ? 'less salty' : 'about the same'}.
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button onClick={() => apply(read.ec)}>Use this reading</Button>
-                    <Button variant="quiet" onClick={() => setRead(null)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </Card>
-          </div>
 
           {diff && <DiffCard diff={diff} />}
         </div>
@@ -306,29 +281,158 @@ export default function Worker() {
   )
 }
 
-function labelFor(instr: Instruction, voice: VoiceSource): string {
-  if (voice === 'recorded') return 'written and voiced by AI · saved for the demo'
-  const w = instr.source === 'gemini' ? 'written by AI' : 'ready-made text'
-  const v = voice === 'gemini' ? 'AI voice' : voice === 'browser' ? 'phone voice' : 'text only'
-  return `${w} · ${v}`
+function GeminiMark({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <defs>
+        <linearGradient id="gm" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#4f8cff" />
+          <stop offset="1" stopColor="#a970ff" />
+        </linearGradient>
+      </defs>
+      <path d="M12 2c.6 4.8 3.2 7.4 10 10-6.8 2.6-9.4 5.2-10 10-.6-4.8-3.2-7.4-10-10 6.8-2.6 9.4-5.2 10-10z" fill="url(#gm)" />
+    </svg>
+  )
+}
+
+function Bubble({ msg }: { msg: Msg }) {
+  if (msg.kind === 'photo')
+    return (
+      <div className="rounded-[20px] rounded-br-md bg-teal-water p-1.5">
+        <div className="relative overflow-hidden rounded-[15px]">
+          <img src={msg.src} alt="Photo of the salt meter in well water" className="h-44 w-full object-cover" />
+        </div>
+      </div>
+    )
+  if (msg.kind === 'thinking')
+    return (
+      <div className="flex items-center gap-2 rounded-[20px] rounded-bl-md bg-white px-3.5 py-2.5 shadow-sm">
+        <m.span animate={{ rotate: 360 }} transition={{ duration: 2.4, repeat: Infinity, ease: 'linear' }} className="flex">
+          <GeminiMark />
+        </m.span>
+        <span className="gemini-shimmer text-[13px] font-semibold">{msg.label}</span>
+      </div>
+    )
+  if (msg.kind === 'voice') {
+    const L = LANGS.find((l) => l.id === msg.lang)!
+    return (
+      <div className="rounded-[20px] rounded-bl-md bg-white p-3 shadow-sm">
+        <VoiceNote url={msg.url} browser={msg.browser} text={msg.text} lang={msg.lang} />
+        <p dir={L.rtl ? 'rtl' : 'ltr'} lang={L.bcp47} className="mt-2 text-[14px] leading-relaxed text-ink">
+          {msg.text}
+        </p>
+        <p className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-ink/65">
+          <GeminiMark className="h-3 w-3" /> Written and voiced by Gemini
+        </p>
+      </div>
+    )
+  }
+  return (
+    <div
+      className={`rounded-[20px] px-3.5 py-2.5 text-[14px] leading-snug ${msg.from === 'farmer' ? 'rounded-br-md bg-teal-water text-white' : 'rounded-bl-md bg-white text-ink shadow-sm'}`}
+    >
+      {msg.text}
+    </div>
+  )
+}
+
+function Replies({
+  stage,
+  onPhoto,
+  onConfirm,
+  onLang,
+  onRestart,
+}: {
+  stage: Stage
+  onPhoto: (s: (typeof SAMPLES)[number]) => void
+  onConfirm: (yes: boolean) => void
+  onLang: (l: Lang) => void
+  onRestart: () => void
+}) {
+  const chip = 'min-h-11 rounded-full bg-white px-3.5 text-[13px] font-semibold text-ink shadow-sm ring-1 ring-black/5 hover:ring-teal-water'
+  return (
+    <div className="min-h-[124px] border-t border-black/5 bg-white/90 px-3 py-3">
+      {stage === 'ask-photo' && (
+        <>
+          <p className="mb-2 text-[11px] font-semibold text-ink/65">Send a photo of the salt meter (example photos):</p>
+          <div className="grid grid-cols-3 gap-2">
+            {SAMPLES.map((s) => (
+              <button key={s.id} onClick={() => onPhoto(s)} className="overflow-hidden rounded-xl ring-1 ring-black/10 transition-shadow hover:ring-2 hover:ring-teal-water">
+                <img src={s.src} alt={`Example salt meter photo showing ${s.label}`} className="h-16 w-full object-cover" />
+                <span className="block py-1 text-[11px] font-semibold">{s.label}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {stage === 'confirm' && (
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => onConfirm(true)} className={`${chip} bg-teal-water text-white`}>
+            Yes, that’s right
+          </button>
+          <button onClick={() => onConfirm(false)} className={chip}>
+            No, send another
+          </button>
+        </div>
+      )}
+      {(stage === 'ask-lang' || stage === 'done') && (
+        <>
+          <p className="mb-2 text-[11px] font-semibold text-ink/65">
+            {stage === 'done' ? 'Hear it in another language:' : 'Choose a language:'}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {LANGS.map((l) => (
+              <button key={l.id} onClick={() => onLang(l.id)} className={chip}>
+                <span lang={l.bcp47}>{l.native}</span>
+              </button>
+            ))}
+            {stage === 'done' && (
+              <button onClick={onRestart} className={`${chip} text-teal-water`}>
+                Start again
+              </button>
+            )}
+          </div>
+        </>
+      )}
+      {(stage === 'reading' || stage === 'generating') && (
+        <p className="flex h-[96px] items-center justify-center gap-2 text-[13px] font-medium text-ink/65">
+          <GeminiMark /> Gemini is working…
+        </p>
+      )}
+    </div>
+  )
+}
+
+function Step({ n, active, done, title, children }: { n: number; active: boolean; done: boolean; title: string; children: ReactNode }) {
+  return (
+    <li className={`flex gap-3.5 rounded-2xl p-3 transition-colors duration-500 ${active ? 'bg-teal-water/8 ring-1 ring-teal-water/25' : ''}`}>
+      <span
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold transition-colors duration-500 ${done ? 'bg-teal-water text-white' : active ? 'bg-ink text-white' : 'bg-black/[0.06] text-ink/60'}`}
+      >
+        {done ? '✓' : n}
+      </span>
+      <div>
+        <p className={`text-[16px] font-semibold ${active || done ? 'text-ink' : 'text-ink/65'}`}>{title}</p>
+        <p className="mt-0.5 text-[14px] leading-relaxed text-ink/70">{children}</p>
+      </div>
+    </li>
+  )
 }
 
 function DiffCard({ diff }: { diff: { before: FarmPlan; after: FarmPlan; from: number; to: number } }) {
-  const totalB = diff.before.valves.reduce((a, v) => a + v.days[0].minutes, 0)
-  const totalA = diff.after.valves.reduce((a, v) => a + v.days[0].minutes, 0)
   return (
     <Card>
-      <Eyebrow>The plan has been updated</Eyebrow>
-      <p className="mt-1 text-[24px] font-semibold text-ink">
-        Well water: {one(diff.from)} → {one(diff.to)} dS/m
+      <h2 className="text-[19px] font-semibold">How tomorrow’s plan changed</h2>
+      <p className="mt-1 text-[14px] text-ink/70">
+        Well water: {one(diff.from)} → {one(diff.to)} dS/m. Saltier water needs more extra water to wash the salt away from the
+        roots.
       </p>
-      <p className="mt-1 text-[14px] text-ink/70">Here is how tomorrow changes:</p>
       <table className="mt-3 w-full text-left text-sm">
         <thead className="text-[12px] text-ink/65">
           <tr>
             <th className="py-1 font-semibold">Valve</th>
             <th className="font-semibold">Minutes</th>
-            <th className="font-semibold">Extra water to wash out salt</th>
+            <th className="font-semibold">Extra for salt</th>
           </tr>
         </thead>
         <tbody className="tabular">
@@ -349,27 +453,22 @@ function DiffCard({ diff }: { diff: { before: FarmPlan; after: FarmPlan; from: n
                 </td>
                 <td>
                   {pct(vb.days[0].lr)} → {pct(va.days[0].lr)}
-                  {va.blend.needed && !vb.blend.needed && <span className="block text-[12px] text-[#9a5d12]">now needs clean water mixed in</span>}
                 </td>
               </tr>
             )
           })}
         </tbody>
       </table>
-      <p className="mt-3 text-[14px] text-ink/70">
-        In total, tomorrow goes from {int(totalB)} to {int(totalA)} minutes. Saltier water needs more extra water to wash the salt
-        away from the roots. Send the new voice message so the worker has the updated times.
-      </p>
     </Card>
   )
 }
 
-function Phone({ children }: { children: React.ReactNode }) {
+function Phone({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-[340px] rounded-[50px] bg-[#2a2a2c] p-3 shadow-[0_40px_90px_-40px_rgba(10,111,105,0.6)] ring-1 ring-black/10">
-      <div className="overflow-hidden rounded-[40px] bg-[#f2f2f7]">
+    <div className="mx-auto w-full max-w-[360px] rounded-[52px] bg-[#2a2a2c] p-3 shadow-[0_40px_90px_-40px_rgba(10,111,105,0.6)] ring-1 ring-black/10">
+      <div className="overflow-hidden rounded-[42px] bg-[#f2f2f7]">
         <div className="flex items-center justify-between px-7 pt-3.5 pb-1 text-[12px] font-semibold text-ink">
-          <span className="tabular">05:12</span>
+          <span className="tabular">18:30</span>
           <span className="h-[26px] w-24 rounded-full bg-black" aria-hidden />
           <span className="tabular">4G</span>
         </div>
@@ -381,17 +480,19 @@ function Phone({ children }: { children: React.ReactNode }) {
 
 function ChatHeader() {
   return (
-    <div className="flex items-center gap-3 border-b border-black/5 bg-white/85 px-4 py-3 text-ink">
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-glow-salt text-[15px] font-semibold text-ink">W</div>
+    <div className="flex items-center gap-3 border-b border-black/5 bg-white/90 px-4 py-3 text-ink">
+      <img src="/favicon.svg" alt="" width={36} height={36} className="rounded-full" />
       <div className="leading-tight">
-        <p className="text-[15px] font-semibold">Farm worker</p>
-        <p className="text-[12px] text-ink/65">voice messages · valves 1–3</p>
+        <p className="text-[15px] font-semibold">Namak · farm assistant</p>
+        <p className="flex items-center gap-1 text-[12px] text-ink/65">
+          <GeminiMark className="h-3 w-3" /> powered by Google Gemini
+        </p>
       </div>
     </div>
   )
 }
 
-function bars(seed: string, n = 32) {
+function bars(seed: string, n = 30) {
   let h = 0
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
   return Array.from({ length: n }, (_, i) => {
@@ -400,7 +501,7 @@ function bars(seed: string, n = 32) {
   })
 }
 
-function VoiceNote({ url, source, busy, text, lang }: { url: string | null; source: VoiceSource; busy: boolean; text: string; lang: Lang }) {
+function VoiceNote({ url, browser, text, lang }: { url: string | null; browser: boolean; text: string; lang: Lang }) {
   const audio = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -408,12 +509,7 @@ function VoiceNote({ url, source, busy, text, lang }: { url: string | null; sour
   const b = useMemo(() => bars(text), [text])
 
   useEffect(() => {
-    setProgress(0)
-    setPlaying(false)
-    if (!url) {
-      audio.current = null
-      return
-    }
+    if (!url) return
     const a = new Audio(url)
     audio.current = a
     a.onloadedmetadata = () => setDur(a.duration)
@@ -422,23 +518,19 @@ function VoiceNote({ url, source, busy, text, lang }: { url: string | null; sour
       setPlaying(false)
       setProgress(1)
     }
-    // Play the fresh message once (allowed after the click that sent it).
     a.play()
       .then(() => setPlaying(true))
       .catch(() => {})
-    return () => {
-      a.pause()
-    }
+    return () => a.pause()
   }, [url])
 
   const toggle = () => {
-    if (source === 'browser') {
+    if (!url) {
+      if (!browser) return
       if (playing) {
         speechSynthesis.cancel()
         setPlaying(false)
-        return
-      }
-      setPlaying(speakInBrowser(text, lang, () => setPlaying(false)))
+      } else setPlaying(speakInBrowser(text, lang, () => setPlaying(false)))
       return
     }
     const a = audio.current
@@ -446,38 +538,28 @@ function VoiceNote({ url, source, busy, text, lang }: { url: string | null; sour
     if (playing) {
       a.pause()
       setPlaying(false)
-    } else {
+    } else
       a.play()
         .then(() => setPlaying(true))
         .catch(() => {})
-    }
   }
 
-  const disabled = busy || (source === 'none' && !url)
   return (
     <div className="flex items-center gap-2.5">
       <button
         onClick={toggle}
-        disabled={disabled}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-white disabled:opacity-40"
+        disabled={!url && !browser}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-water text-white disabled:opacity-40"
         aria-label={playing ? 'Pause voice message' : 'Play voice message'}
       >
-        {busy ? (
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-        ) : playing ? (
-          <IconPause className="h-4 w-4" />
-        ) : (
-          <IconPlay className="h-4 w-4" />
-        )}
+        {playing ? <IconPause className="h-4 w-4" /> : <IconPlay className="h-4 w-4" />}
       </button>
       <div className="flex h-8 flex-1 items-center gap-[2px]" aria-hidden>
         {b.map((h, i) => (
-          <span key={i} className={`w-[3px] rounded-full ${i / b.length <= progress ? 'bg-white' : 'bg-white/40'}`} style={{ height: `${h * 100}%` }} />
+          <span key={i} className={`w-[3px] rounded-full ${i / b.length <= progress ? 'bg-teal-water' : 'bg-teal-water/30'}`} style={{ height: `${h * 100}%` }} />
         ))}
       </div>
-      <span className="w-9 text-right text-[11px] tabular text-white/80">
-        {dur ? `0:${String(Math.round(dur)).padStart(2, '0')}` : busy ? '…' : ''}
-      </span>
+      <span className="w-9 text-right text-[11px] tabular text-ink/65">{dur ? `0:${String(Math.round(dur)).padStart(2, '0')}` : ''}</span>
     </div>
   )
 }

@@ -100,7 +100,7 @@ export default function App() {
         <div className="mx-auto flex h-14 max-w-[1080px] items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex items-center gap-3">
             <Logo />
-            <span className="hidden text-[12px] text-ink/65 xl:inline">
+            <span className="hidden text-[12px] text-ink/65 2xl:inline">
               {farm.name} · {farm.place}
             </span>
           </div>
@@ -124,7 +124,7 @@ export default function App() {
               Story
             </a>
             <button onClick={demo.running ? demo.stop : demo.start} className="group inline-flex min-h-11 items-center">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-[12px] font-semibold text-white transition-transform group-hover:scale-[1.03]">
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink px-3.5 py-1.5 text-[12px] font-semibold text-white transition-transform group-hover:scale-[1.03]">
                 {demo.running ? 'End demo' : '▶ Demo'}
               </span>
             </button>

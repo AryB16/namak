@@ -290,3 +290,23 @@ select:focus-visible {
     opacity: 0.35;
   }
 }
+
+/* "Gemini is …" shimmer text */
+.gemini-shimmer {
+  background: linear-gradient(90deg, #4f6bdc 0%, #9a6bff 30%, #0a6f69 50%, #4f6bdc 70%, #9a6bff 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 1.6s linear infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gemini-shimmer {
+    animation: none;
+  }
+}
