@@ -91,7 +91,7 @@ export default function Compare() {
           className="salt-slider mt-4 w-full"
           aria-valuetext={`${one(wellEC)} deciSiemens per metre`}
         />
-        <div className="mt-1 flex justify-between tabular text-[10px] text-ink/65">
+        <div className="mt-1 flex justify-between tabular text-[11px] text-ink/65">
           <span>0.5 fresh</span>
           <span>3.0</span>
           <span>8 very salty</span>
@@ -191,13 +191,13 @@ function ValveCompare({ v, canBlend }: { v: YearValve; canBlend: boolean }) {
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
-          <p className="mb-1 text-[11px] font-semibold text-ink/65">
+          <p className="mb-1.5 text-[12px] font-semibold text-ink/70">
             Habit · salt peaks at {one(v.habitPeakECe)} · season yield {int(v.habitYield)}%
           </p>
           <SaltGauge ece={v.habitPeakECe} crop={crop} target={v.target} compact />
         </div>
         <div>
-          <p className="mb-1 text-[11px] font-semibold text-teal-water/80">
+          <p className="mb-1.5 text-[12px] font-semibold text-teal-water">
             Namak · {v.lfCapped ? 'flush capped' : 'held at the limit'} · season yield {int(v.namakYield)}%
           </p>
           <SaltGauge ece={v.namakECe} crop={crop} target={v.target} compact />

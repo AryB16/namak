@@ -7,7 +7,7 @@ import { EASE } from './motion'
 export function SourceTag({ children, tone = 'teal' }: { children: ReactNode; tone?: 'teal' | 'sand' | 'amber' }) {
   const dot = { teal: 'bg-teal-water', sand: 'bg-sand-500', amber: 'bg-amber-warn' }[tone]
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.045] px-2.5 py-1 text-[11px] font-medium leading-none text-ink/70">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.045] px-2.5 py-1 text-[12px] font-medium leading-none text-ink/70">
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden />
       {children}
     </span>

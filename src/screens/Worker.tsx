@@ -180,7 +180,7 @@ export default function Worker() {
                 <p dir={L.rtl ? 'rtl' : 'ltr'} lang={L.bcp47} className="mt-2 text-[14px] leading-relaxed text-white">
                   {instr.text}
                 </p>
-                <p className="mt-1.5 text-right text-[10px] text-white/75">
+                <p className="mt-1.5 text-right text-[11px] text-white/75">
                   {sentAt} · {step === 'writing' ? `writing in ${L.name}…` : step === 'recording' ? `writing & recording in ${L.name} — about 20 s…` : labelFor(instr, voiceSrc)}
                 </p>
               </div>
@@ -478,7 +478,7 @@ function VoiceNote({ url, source, busy, text, lang }: { url: string | null; sour
           />
         ))}
       </div>
-      <span className="w-9 text-right tabular text-[10px] text-white/75">{dur ? `0:${String(Math.round(dur)).padStart(2, '0')}` : busy ? '…' : '0:12'}</span>
+      <span className="w-9 text-right tabular text-[11px] text-white/75">{dur ? `0:${String(Math.round(dur)).padStart(2, '0')}` : busy ? '…' : '0:12'}</span>
     </div>
   )
 }

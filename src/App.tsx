@@ -156,7 +156,7 @@ export default function App() {
                 <a
                   href={`#${id}`}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[10.5px] font-medium ${active ? 'text-teal-water' : 'text-ink/65'}`}
+                  className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium ${active ? 'text-teal-water' : 'text-ink/65'}`}
                 >
                   <Icon className={`h-[22px] w-[22px] ${active ? 'stroke-[2.2]' : ''}`} />
                   {short}

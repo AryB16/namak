@@ -239,7 +239,7 @@ function Tip({ active, payload, unit, a, b }: { active?: boolean; payload?: { pa
   if (p[a] === undefined) return null
   return (
     <div className="rounded-xl bg-ink px-3 py-2 text-xs text-salt shadow-lg">
-      <p className="tabular text-[10px] text-salt/75">{dayLabel(String(p.date))}</p>
+      <p className="tabular text-[11px] text-salt/75">{dayLabel(String(p.date))}</p>
       <p>Habit {one(Number(p[a]))} {unit}</p>
       <p className="font-semibold">Namak {one(Number(p[b]))} {unit}</p>
     </div>
