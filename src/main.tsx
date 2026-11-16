@@ -6,9 +6,12 @@ import '@fontsource/ibm-plex-sans/latin-600.css'
 import '@fontsource/ibm-plex-mono/latin-500.css'
 import './index.css'
 import App from './App.tsx'
+import { AppProvider } from './state.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <AppProvider>
+      <App />
+    </AppProvider>
   </StrictMode>,
 )

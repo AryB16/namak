@@ -36,3 +36,51 @@ body {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Well-EC slider: big thumb (44px touch target), salt-coloured track */
+.salt-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+.salt-slider::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4d8b4a 0%, #4d8b4a 3%, #d98b2b 33%, #b8432f 100%);
+}
+.salt-slider::-moz-range-track {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4d8b4a 0%, #4d8b4a 3%, #d98b2b 33%, #b8432f 100%);
+}
+.salt-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: -12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--color-salt);
+  border: 3px solid var(--color-teal-deep);
+  box-shadow: 0 4px 12px -2px rgba(8, 52, 58, 0.4);
+}
+.salt-slider::-moz-range-thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--color-salt);
+  border: 3px solid var(--color-teal-deep);
+}
+.salt-slider:focus-visible {
+  outline: 3px solid var(--color-amber-warn);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--color-amber-warn);
+  outline-offset: 2px;
+}
