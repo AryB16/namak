@@ -8,6 +8,9 @@
 *Namak* means salt in Hindi, Urdu and Persian.
 
 <p>
+<img src="docs/screenshots/0-tour.jpg" width="820" alt="First-visit tour: Your well is salty.">
+</p>
+<p>
 <img src="docs/screenshots/1-tomorrow.jpg" width="200" alt="Tomorrow screen: total watering time, habit vs Namak, send to worker">
 <img src="docs/screenshots/2-habit-vs-namak.jpg" width="200" alt="Habit vs Namak: salt costs this farm 2,230 m³ of water a year">
 <img src="docs/screenshots/3-replay.jpg" width="200" alt="Season replay on ERA5 weather: water and salt debt, habit vs Namak">
