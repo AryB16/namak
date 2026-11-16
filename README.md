@@ -8,7 +8,7 @@
 *Namak* means salt in Hindi, Urdu and Persian.
 
 <p>
-<img src="docs/screenshots/0-tour.jpg" width="820" alt="First-visit tour: Your well is salty.">
+<img src="docs/screenshots/0-welcome.jpg" width="820" alt="Welcome screen: Smarter watering for salty wells — Watch the demo or Explore on my own">
 </p>
 <p>
 <img src="docs/screenshots/1-tomorrow.jpg" width="200" alt="Tomorrow screen: total watering time, habit vs Namak, send to worker">
