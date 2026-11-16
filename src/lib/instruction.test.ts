@@ -27,8 +27,8 @@ describe('worker instruction', () => {
     expect(instructionMatchesPlan('الصمام ١ لمدة ٩٥ دقيقة من ٠٣:٠٠ والصمام ٢ لمدة ٦٣ دقيقة من ٠٤:٣٥', plan)).toBe(true)
   })
   it('prompt lists every valve', () => {
-    const p = instructionPrompt(plan, 'ml')
+    const p = instructionPrompt(plan, 'ar')
     expect(p).toContain('Valve 1: 95 minutes, start 03:00')
-    expect(p).toContain('Malayalam')
+    expect(p).toContain('Arabic')
   })
 })

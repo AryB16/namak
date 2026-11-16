@@ -475,7 +475,7 @@ function Final({ from, to }: { from: string; to: string }) {
         </div>
         <p className="mx-auto mt-10 max-w-[560px] text-[13px] leading-relaxed text-white/65">
           Illustrative farm near Al Ain. Real weather: Open-Meteo forecast and ERA5 reanalysis ({monthYear(from)} – {monthYear(to)}).
-          Science: FAO Irrigation & Drainage Papers 29, 56 and 61. Works offline · English, العربية, हिन्दी, اردو, മലയാളം.
+          Science: FAO Irrigation & Drainage Papers 29, 56 and 61. Works offline · English, हिन्दी, العربية.
         </p>
       </Reveal>
     </section>

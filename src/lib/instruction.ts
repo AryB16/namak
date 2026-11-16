@@ -5,14 +5,12 @@
  * The non-English templates were written for this prototype and have not been checked by native speakers yet.
  */
 
-export type Lang = 'en' | 'ar' | 'hi' | 'ur' | 'ml'
+export type Lang = 'en' | 'hi' | 'ar'
 
 export const LANGS: { id: Lang; name: string; native: string; bcp47: string; rtl?: boolean }[] = [
   { id: 'en', name: 'English', native: 'English', bcp47: 'en-IN' },
-  { id: 'ar', name: 'Arabic', native: 'العربية', bcp47: 'ar-AE', rtl: true },
   { id: 'hi', name: 'Hindi', native: 'हिन्दी', bcp47: 'hi-IN' },
-  { id: 'ur', name: 'Urdu', native: 'اردو', bcp47: 'ur-PK', rtl: true },
-  { id: 'ml', name: 'Malayalam', native: 'മലയാളം', bcp47: 'ml-IN' },
+  { id: 'ar', name: 'Arabic', native: 'العربية', bcp47: 'ar-AE', rtl: true },
 ]
 
 export interface InstructionValve {
@@ -53,20 +51,6 @@ const T: Record<
     close: 'खोलें, हर वाल्व समय पर बंद करें और कुएँ के पानी में EC पेन की फोटो भेजें।',
     flush: (ns) => `वाल्व ${ns} में नमक धोने के लिए ज़्यादा पानी है।`,
   },
-  ur: {
-    open: 'کل',
-    valve: (v) => `والو ${v.n} کو ${v.start} بجے سے ${v.minutes} منٹ`,
-    join: '، ',
-    close: 'کھولیں، ہر والو وقت پر بند کریں اور کنویں کے پانی میں EC پین کی تصویر بھیجیں۔',
-    flush: (ns) => `والو ${ns} میں نمک دھونے کے لیے زیادہ پانی ہے۔`,
-  },
-  ml: {
-    open: 'നാളെ',
-    valve: (v) => `വാൽവ് ${v.n} ${v.start} മുതൽ ${v.minutes} മിനിറ്റ്`,
-    join: ', ',
-    close: 'തുറക്കുക; ഓരോ വാൽവും സമയത്ത് അടയ്ക്കുക, കിണർ വെള്ളത്തിലെ EC പെന്നിന്റെ ഫോട്ടോ അയയ്ക്കുക.',
-    flush: (ns) => `വാൽവ് ${ns}-ൽ ഉപ്പ് കഴുകിക്കളയാൻ അധിക വെള്ളം ഉണ്ട്.`,
-  },
 }
 
 /** Deterministic fallback instruction (no network needed). */
@@ -74,9 +58,9 @@ export function templateInstruction(plan: InstructionPlan, lang: Lang): string {
   const t = T[lang]
   const list = plan.valves.map(t.valve).join(t.join)
   const reps = plan.valves.filter((v) => v.repayment).map((v) => v.n)
-  // English and Arabic put the verb first; Hindi, Urdu and Malayalam put it at the end ("…खोलें").
+  // English and Arabic put the verb first; Hindi puts it at the end ("…खोलें").
   const verbFirst = lang === 'en' || lang === 'ar'
-  const stop = lang === 'hi' ? '।' : lang === 'ur' ? '۔' : '.'
+  const stop = lang === 'hi' ? '।' : '.'
   const first = verbFirst ? `${t.open} ${list}${stop}` : `${t.open} ${list} ${t.close.split(/[,،;]/)[0]}${stop}`
   const second = verbFirst ? t.close : t.close.slice(t.close.split(/[,،;]/)[0].length + 1).trim()
   const flush = reps.length ? ` ${t.flush(reps.join(lang === 'en' ? ' and ' : ', '))}` : ''

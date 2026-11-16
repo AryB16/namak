@@ -46,7 +46,7 @@ Every screen explains the idea from scratch in everyday words; the technical mat
 | **Tomorrow** | Total watering time, a card per valve (“Valve 1 · Palms · 95 min · 00:00 → 01:35”), one-line *why* (heat + salt), a Salt Debt gauge, blend advice, and the 7-day plan with repayment days marked. |
 | **Habit vs Namak** | A year of real weather at the farm. Drag the **well-EC slider** and the salt water cost, water/AED saved and yield risk change live; when the water is too salty for a crop, Namak shows the RO/TSE **blend ratio**. |
 | **Season Replay** | Last year re-run day by day on **ERA5 reanalysis weather**: cumulative water and root-zone salt, habit vs Namak, animated. This is the proof that the decision beats the guess. |
-| **Worker** | Phone mock-up. *Send to the worker* → two short sentences in English, Arabic, Hindi, Urdu or Malayalam, played as a voice message. *Check how salty the well is* → pick one of three example salt-meter photos → its reading appears → the owner confirms → the plan recalculates with a visible before/after. |
+| **Worker** | Phone mock-up. *Send to the worker* → two short sentences in English, Hindi or Arabic, played as a voice message. *Check how salty the well is* → pick one of three example salt-meter photos → its reading appears → the owner confirms → the plan recalculates with a visible before/after. |
 | **Farm** | Location, well EC, blend water, valves (crop, plants, spacing, emitters, flow), soil test, the worker’s habit. Saved on the phone. |
 | **Why it works** | Sources, formulas, crop constants, real vs illustrative, limits, cost. |
 
@@ -181,8 +181,20 @@ The key lives only in Vercel’s environment (`GEMINI_API_KEY`); per-IP limits a
 and request formats were taken from Google’s docs on 16 Nov 2026 (Interactions API, `Api-Revision: 2026-05-20`).
 The AI never decides minutes: the engine does; AI only translates, speaks and reads a display.
 
+**All saved AI output lives in one place and is reused every day:**
+
+| What | Where |
+|---|---|
+| Gemini’s voice messages (3 example readings × English, Hindi, Arabic = 9 files, 1.3 MB) | `public/demo/voice-<reading>-<lang>.m4a` |
+| Their text, the plans they were made for, and Gemini’s readings of the three example meter photos | `src/data/demoAssets.json` |
+| The recorded real weather the site uses by default (forecast for 17 Nov 2026, ERA5 year to 10 Nov 2026) | `src/data/snapshot-forecast.json`, `src/data/snapshot-era5.json` |
+
+Re-running `scripts/make-demo-assets.mts` reuses every saved file whose plan has not changed, so it never pays twice.
+With the recorded weather (the default) the site makes no AI calls at all. Live mode is capped at 60 AI calls a day
+and shares each answer through Vercel’s CDN for 24 hours.
+
 **Generated once, reused:** the guided demo runs on a fixed *demo day* (the real forecast recorded on 16 Nov 2026). Its worker
-messages in all five languages, their voice recordings and the readings of the three example meter photos were produced once
+messages in all three languages, their voice recordings and the readings of the three example meter photos were produced once
 by Gemini (`scripts/make-demo-assets.mts`) and saved in the repo (`public/demo/`, `src/data/demoAssets.json`). The demo makes
 no AI calls, always shows the same result, and a test fails if an engine change ever makes the saved messages disagree with
 the plan. Outside the demo, a live message is generated only when someone presses *Send*, and is cached.

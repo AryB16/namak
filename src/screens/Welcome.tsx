@@ -4,7 +4,7 @@ import { EASE } from '../components/motion'
 import { useDemo } from '../demo/Demo'
 import { markToured } from '../lib/tour'
 
-const chips = ['19% less water on a real year', '5 languages, by voice', 'Works offline', 'No sign-up']
+const chips = ['19% less water on a real year', '3 languages, by voice', 'Works offline', 'No sign-up']
 
 export default function Welcome() {
   const demo = useDemo()

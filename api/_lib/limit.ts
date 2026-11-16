@@ -1,7 +1,7 @@
 /**
  * Simple in-memory rate limits so a public demo cannot burn the API balance.
  *  - per IP and route: `perMinute` calls in any rolling minute
- *  - per server instance: AI_DAILY_CAP calls per UTC day across all routes (default 300)
+ *  - per server instance: AI_DAILY_CAP calls per UTC day across all routes (default 60)
  * In-memory state resets when the serverless instance is recycled; this is a guard rail, not billing control.
  * When a limit trips, the client falls back to its offline template / browser voice / manual entry.
  */
@@ -21,7 +21,7 @@ export function checkLimit(req: Request, route: string, perMinute: number): { ok
     day = today
     dayCount = 0
   }
-  const cap = Number(process.env.AI_DAILY_CAP || 300)
+  const cap = Number(process.env.AI_DAILY_CAP || 60)
   if (dayCount >= cap) return { ok: false, reason: 'daily AI limit reached' }
 
   const key = `${route}:${clientIp(req)}`

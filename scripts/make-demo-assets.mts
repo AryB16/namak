@@ -1,9 +1,10 @@
 // Generates the demo's AI content ONCE (Gemini, server-side, with the key from .env.local) and saves it in the repo:
-//  - the worker message for the demo day in 5 languages (Gemini text, checked number-by-number like /api/instruct)
+//  - the worker message for the demo day in English, Hindi and Arabic (Gemini text, checked number-by-number like /api/instruct)
 //  - its voice note in each language (Gemini TTS) -> public/demo/voice-<lang>.m4a
 //  - Gemini's reading of each example salt-meter photo -> src/data/demoAssets.json
 // The app replays these, so the demo never waits on (or pays for) the AI.
 // Usage: set -a; . ./.env.local; set +a; npx tsx scripts/make-demo-assets.mts
+// Anything already saved for the same plan + language is reused, not regenerated (pass --force to redo it).
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -33,7 +34,15 @@ const rescan = process.argv.includes('--rescan') || !existing?.readings
 
 async function writeAndVoice(plan: ReturnType<typeof instructionPlan>, tag: string) {
   const out: Record<string, { text: string; source: 'gemini' | 'template' }> = {}
+  const prev = existing?.byReading?.[tag]
   for (const l of LANGS) {
+    // Reuse what Gemini already made: never pay twice for the same plan + language.
+    const keep = prev && JSON.stringify(prev.plan) === JSON.stringify(plan) && prev.voice?.[l.id] && existsSync(`public/demo/voice-${tag}-${l.id}.m4a`)
+    if (keep && !process.argv.includes('--force')) {
+      out[l.id] = prev.voice[l.id]
+      console.log(tag, l.id, 'reused (already saved)')
+      continue
+    }
     let text = templateInstruction(plan, l.id)
     let source: 'gemini' | 'template' = 'template'
     for (let attempt = 0; attempt < 3 && source === 'template'; attempt++) {
