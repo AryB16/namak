@@ -2,9 +2,9 @@
  * POST /api/voice  { text, lang }  →  audio/wav (Gemini TTS)
  * Errors return JSON with status ≥ 400; the client then uses the browser's speechSynthesis or a committed sample.
  */
-import { LANGS } from '../src/lib/instruction'
-import { TTS_MODEL, interact, json, outputAudio } from './_lib/gemini'
-import { checkLimit } from './_lib/limit'
+import { LANGS } from '../src/lib/instruction.js'
+import { TTS_MODEL, interact, json, outputAudio } from './_lib/gemini.js'
+import { checkLimit } from './_lib/limit.js'
 
 export async function POST(req: Request): Promise<Response> {
   let text = ''

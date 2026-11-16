@@ -10,9 +10,9 @@ import {
   templateInstruction,
   type InstructionPlan,
   type Lang,
-} from '../src/lib/instruction'
-import { TEXT_MODEL, interact, json, outputText } from './_lib/gemini'
-import { checkLimit } from './_lib/limit'
+} from '../src/lib/instruction.js'
+import { TEXT_MODEL, interact, json, outputText } from './_lib/gemini.js'
+import { checkLimit } from './_lib/limit.js'
 
 function parse(body: unknown): { lang: Lang; plan: InstructionPlan } | null {
   if (!body || typeof body !== 'object') return null

@@ -4,8 +4,8 @@
  * range; the UI always asks the owner to confirm before the farm's well EC changes.
  *   mS/cm = dS/m; µS/cm ÷ 1000 = dS/m; ppm (TDS) is rejected because the TDS factor varies by meter.
  */
-import { TEXT_MODEL, interact, json, outputText } from './_lib/gemini'
-import { checkLimit } from './_lib/limit'
+import { TEXT_MODEL, interact, json, outputText } from './_lib/gemini.js'
+import { checkLimit } from './_lib/limit.js'
 
 const MAX_B64 = 3_000_000 // ~2.2 MB image
 
