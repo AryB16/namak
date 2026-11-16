@@ -18,7 +18,7 @@ export default function Welcome() {
     transition: { duration: 0.9, ease: EASE, delay: d },
   })
   return (
-    <main className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 py-16 text-center text-white">
+    <main className="relative isolate flex min-h-[100svh] flex-col items-center justify-center overflow-hidden bg-night px-6 py-16 text-center text-white">
       <Backdrop tone="dark" />
       <motion.img {...item(0)} src="/favicon.svg" alt="" width={64} height={64} className="rounded-[18px] shadow-[0_10px_40px_-8px_rgba(95,211,198,0.6)]" />
       <motion.p {...item(0.1)} className="mt-6 text-[15px] font-semibold text-glow-salt md:text-[17px]">
