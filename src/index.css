@@ -332,3 +332,20 @@ select:focus-visible {
   background-clip: text;
   color: transparent;
 }
+
+/* Story hero: "salty." shimmers like salt crystals catching light */
+.salt-shine {
+  background: linear-gradient(100deg, #ffffff 0%, #ffffff 35%, #9ff0e6 48%, #ffd28a 54%, #ffffff 66%, #ffffff 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: salt-shine 6s ease-in-out 1.2s infinite;
+}
+@keyframes salt-shine {
+  0% { background-position: 100% 0; }
+  60%, 100% { background-position: 0% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .salt-shine { animation: none; }
+}

@@ -2,7 +2,7 @@
  * First-visit story (apple.com-style scroll). Every number is computed by the engine from the bundled ERA5 year for
  * the illustrative demo farm — nothing is hard-coded.
  */
-import { m, useMotionValueEvent, useScroll, useTransform } from 'motion/react'
+import { m, useMotionValue, useMotionValueEvent, useScroll, useSpring, useTransform } from 'motion/react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { markToured } from '../lib/tour'
 import { useDemo } from '../demo/Demo'
@@ -11,6 +11,7 @@ import { LANGS } from '../lib/instruction'
 import type { Story } from '../lib/story'
 import demoAssets from '../data/demoAssets.json'
 import SaltBasics from '../components/SaltBasics'
+import SaltField from '../components/SaltField'
 
 /** Compute the story off the main thread (Web Worker) so the first screen never stalls. */
 function useStory(): Story | null {
@@ -129,72 +130,113 @@ function Fade({ from, to }: { from: 'night' | 'dune'; to: 'night' | 'dune' }) {
   )
 }
 
-/* 1 — Hero */
+/* 1 — Hero: drifting salt crystals that scatter from the cursor, a water-light that follows it, a title that tilts toward it */
 function Hero() {
   const ref = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
   const scale = useTransform(scrollYProgress, [0, 1], [1, 0.9])
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
-  const words = ['Your', 'well', 'is', 'salty.']
   const demo = useDemo()
+
+  // Pointer position, normalised to -0.5..0.5 across the section (0 = centre).
+  const px = useMotionValue(0)
+  const py = useMotionValue(0)
+  const sx = useSpring(px, { stiffness: 90, damping: 18, mass: 0.6 })
+  const sy = useSpring(py, { stiffness: 90, damping: 18, mass: 0.6 })
+  const lightX = useTransform(sx, (v) => `${50 + v * 100}%`)
+  const lightY = useTransform(sy, (v) => `${50 + v * 100}%`)
+  const rotY = useTransform(sx, [-0.5, 0.5], [7, -7])
+  const rotX = useTransform(sy, [-0.5, 0.5], [-5, 5])
+  const shiftX = useTransform(sx, [-0.5, 0.5], [14, -14])
+  const shiftY = useTransform(sy, [-0.5, 0.5], [10, -10])
+  const onMove = (e: React.PointerEvent) => {
+    if (e.pointerType !== 'mouse') return
+    const r = ref.current!.getBoundingClientRect()
+    px.set((e.clientX - r.left) / r.width - 0.5)
+    py.set((e.clientY - r.top) / r.height - 0.5)
+  }
+  const onLeave = () => {
+    px.set(0)
+    py.set(0)
+  }
+
+  const words = ['Your', 'well', 'is']
   return (
-    <section ref={ref} data-tone="dark" className="relative flex h-[100svh] min-h-[560px] items-center justify-center overflow-hidden px-6">
+    <section
+      ref={ref}
+      data-tone="dark"
+      onPointerMove={onMove}
+      onPointerLeave={onLeave}
+      className="relative flex h-[100svh] min-h-[560px] items-center justify-center overflow-hidden px-6"
+    >
+      {/* water-light that follows the cursor */}
       <m.div
         aria-hidden
-        className="absolute top-1/2 left-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(95,211,198,0.35),rgba(95,211,198,0)_65%)]"
-        animate={{ scale: [1, 1.12, 1], opacity: [0.8, 1, 0.8] }}
+        className="pointer-events-none absolute h-[90vmin] w-[90vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(95,211,198,0.30),rgba(95,211,198,0.08)_40%,rgba(95,211,198,0)_68%)]"
+        style={{ left: lightX, top: lightY }}
+      />
+      <m.div
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 h-[60vmin] w-[60vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,181,71,0.10),rgba(255,181,71,0)_65%)]"
+        animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
         transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <m.div style={{ scale, opacity }} className="relative text-center">
-        <m.p
-          className="text-[15px] font-semibold text-glow-salt md:text-[17px]"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: EASE }}
-        >
-          Namak · smarter watering for salty wells
-        </m.p>
-        <h1 className="mt-4 text-[56px] leading-[1] font-semibold tracking-[-0.04em] md:text-[112px]">
-          {words.map((w, i) => (
+      <SaltField />
+
+      <m.div style={{ scale, opacity }} className="relative text-center [perspective:900px]">
+        <m.div style={{ rotateX: rotX, rotateY: rotY, x: shiftX, y: shiftY }} className="[transform-style:preserve-3d]">
+          <h1 className="text-[64px] leading-[0.95] font-semibold tracking-[-0.045em] md:text-[132px]">
+            {words.map((w, i) => (
+              <m.span
+                key={w}
+                className="inline-block pr-[0.22em]"
+                initial={{ opacity: 0, y: 40, filter: 'blur(12px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 1, ease: EASE, delay: 0.05 + i * 0.09 }}
+              >
+                {w}
+              </m.span>
+            ))}
             <m.span
-              key={w}
-              className="inline-block pr-[0.22em]"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: EASE, delay: 0.05 + i * 0.08 }}
+              className="salt-shine inline-block"
+              initial={{ opacity: 0, y: 40, filter: 'blur(12px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              transition={{ duration: 1, ease: EASE, delay: 0.32 }}
             >
-              {w}
+              salty.
             </m.span>
-          ))}
-        </h1>
+          </h1>
+        </m.div>
         <m.p
-          className="mx-auto mt-6 max-w-[560px] text-[19px] leading-snug text-white/70 md:text-[24px]"
+          className="mx-auto mt-7 max-w-[640px] text-[19px] leading-snug text-white/65 md:text-[23px]"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: EASE, delay: 0.35 }}
+          transition={{ duration: 0.8, ease: EASE, delay: 0.6 }}
         >
-          Desert farms water from salty wells. Get the amount wrong and you either waste water or slowly ruin the soil. Namak works out the right amount every day — and tells the farm worker, by voice.
+          Namak tells you exactly how much to water — salt included.
         </m.p>
         <m.div
           className="mx-auto mt-10 flex w-full max-w-[520px] flex-col gap-3 sm:flex-row sm:justify-center"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: EASE, delay: 0.5 }}
+          transition={{ duration: 0.8, ease: EASE, delay: 0.75 }}
         >
           <m.button
             onClick={demo.start}
-            whileHover={{ scale: 1.03 }}
+            whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
-            className="flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-7 text-[17px] font-semibold text-ink shadow-[0_12px_50px_-12px_rgba(95,211,198,0.8)]"
+            className="group relative flex min-h-14 items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-7 text-[17px] font-semibold text-ink shadow-[0_12px_50px_-12px_rgba(95,211,198,0.8)]"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-water text-[11px] text-white">▶</span>
+            <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-teal-water text-[11px] text-white">
+              <span className="absolute inset-0 animate-ping rounded-full bg-teal-water/40" />▶
+            </span>
             Watch the demo <span className="font-normal text-ink/70">· 60 s</span>
           </m.button>
           <m.button
             onClick={openFarm}
-            whileHover={{ scale: 1.03 }}
+            whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
-            className="min-h-14 rounded-full bg-white/10 px-7 text-[17px] font-semibold text-white ring-1 ring-white/20 hover:bg-white/15"
+            className="min-h-14 rounded-full bg-white/[0.08] px-7 text-[17px] font-semibold text-white ring-1 ring-white/20 backdrop-blur-md hover:bg-white/15"
           >
             Explore on my own
           </m.button>
@@ -202,9 +244,10 @@ function Hero() {
       </m.div>
       <m.div
         aria-hidden
-        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-[12px] font-medium text-white/55"
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-[12px] font-medium text-white/50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1, y: [0, 8, 0] }}
+        transition={{ opacity: { delay: 1.4, duration: 0.8 }, y: { duration: 2, repeat: Infinity, ease: 'easeInOut' } }}
       >
         Scroll for the story
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

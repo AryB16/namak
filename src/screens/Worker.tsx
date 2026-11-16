@@ -18,7 +18,7 @@ import { LANGS, type InstructionPlan, type Lang } from '../lib/instruction'
 import { int, one, pct } from '../lib/format'
 import { browserVoiceFor, fetchInstruction, fetchVoice, instructionPlan, speakInBrowser, type ECRead } from '../lib/worker'
 import { useApp } from '../state'
-import { useDemoEvent } from '../demo/Demo'
+import { useDemo, useDemoEvent } from '../demo/Demo'
 import demo from '../data/demoAssets.json'
 
 type SampleId = 'ec-3.82-mscm' | 'ec-4210-uscm' | 'ec-2.64-mscm'
@@ -48,6 +48,9 @@ type Msg =
 type NewMsg = Msg extends unknown ? (Msg extends infer T ? (T extends Msg ? Omit<T, 'id'> : never) : never) : never
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+/** Human-feeling pause between min and max ms. The guided demo uses the midpoint so every recording has the same timing. */
+let steady = false
+const pause = (min: number, max: number) => wait(steady ? (min + max) / 2 : min + Math.random() * (max - min))
 
 /**
  * The assistant's own lines in each language (the voice message itself is written by Gemini).
@@ -108,6 +111,7 @@ const LINES: Record<
 
 export default function Worker() {
   const { farm, setFarm, planDays, addReading, online, demoDay } = useApp()
+  steady = useDemo().running
   const nextId = useRef(1)
   const [msgs, setMsgs] = useState<Msg[]>(() => initialMsgs())
   const [stage, setStageState] = useState<Stage>('ask-lang')
@@ -136,10 +140,13 @@ export default function Worker() {
   }
   const replace = (id: number, m: NewMsg) => setMsgs((x) => x.map((y) => (y.id === id ? ({ ...m, id } as Msg) : y)))
   const relabel = (id: number, label: string) => setMsgs((x) => x.map((y) => (y.id === id && y.kind === 'thinking' ? { ...y, label } : y)))
-  /** A bot line in the farmer's language, with the English underneath for everyone else. */
-  const say = (pick: (t: (typeof LINES)['en']) => string) => {
+  /** A bot line in the farmer's language (typing dots first), with the English underneath for everyone else. */
+  const say = async (pick: (t: (typeof LINES)['en']) => string) => {
     const l = langRef.current
-    push({ from: 'bot', kind: 'text', text: pick(LINES[l]), lang: l, gloss: l === 'en' ? undefined : pick(LINES.en) })
+    const text = pick(LINES[l])
+    const dots = push({ from: 'bot', kind: 'thinking', label: '' })
+    await pause(550 + text.length * 3, 850 + text.length * 5)
+    replace(dots, { from: 'bot', kind: 'text', text, lang: l, gloss: l === 'en' ? undefined : pick(LINES.en) })
   }
 
   useEffect(() => {
@@ -156,8 +163,8 @@ export default function Worker() {
     setLang(l)
     setStage('ask-photo')
     push({ from: 'farmer', kind: 'text', text: <span lang={L.bcp47}>{L.native}</span> })
-    await wait(450)
-    say((t) => t.askPhoto)
+    await pause(250, 500)
+    await say((t) => t.askPhoto)
   }
 
   // 2. The farmer sends a meter photo -> Gemini reads it -> the farmer confirms.
@@ -165,10 +172,14 @@ export default function Worker() {
     if (stageRef.current !== 'ask-photo') return
     setStage('reading')
     push({ from: 'farmer', kind: 'photo', src: s.src })
-    await wait(350)
-    const t = push({ from: 'bot', kind: 'thinking', label: 'Gemini is reading the meter…' })
+    await pause(300, 500)
+    const t = push({ from: 'bot', kind: 'thinking', label: 'Uploading photo…' })
     // The reading of this example photo was made once by Gemini and saved.
-    await wait(1600)
+    await pause(450, 900)
+    relabel(t, 'Gemini is reading the meter…')
+    await pause(1300, 2300)
+    relabel(t, 'Checking the units…')
+    await pause(450, 800)
     const l = langRef.current
     const x = s.reading.unit === 'µS/cm' ? `${s.label} (= ${one(s.reading.ec)} mS/cm)` : s.label
     replace(t, { from: 'bot', kind: 'text', text: LINES[l].confirmQ(x), lang: l, gloss: l === 'en' ? undefined : LINES.en.confirmQ(x) })
@@ -184,8 +195,8 @@ export default function Worker() {
     const Lc = LANGS.find((x) => x.id === l)!
     if (!yes) {
       push({ from: 'farmer', kind: 'text', text: LINES[l].no, lang: l })
-      await wait(400)
-      say((t) => t.retake)
+      await pause(250, 500)
+      await say((t) => t.retake)
       pendingRef.current = null
       setStage('ask-photo')
       return
@@ -201,22 +212,24 @@ export default function Worker() {
     addReading({ at: new Date().toISOString(), ec, previous: f.wellEC, source: 'photo' })
     setFarm(next)
     pendingRef.current = null
-    await wait(500)
+    await pause(250, 450)
     const a = one(f.wellEC)
     const b = one(ec)
-    say((t) => (ec > f.wellEC + 0.05 ? t.saltier(a, b) : ec < f.wellEC - 0.05 ? t.lesser(a, b) : t.same))
-    await wait(700)
-    say((t) => t.planNow)
-    await wait(300)
+    await say((t) => (ec > f.wellEC + 0.05 ? t.saltier(a, b) : ec < f.wellEC - 0.05 ? t.lesser(a, b) : t.same))
+    await pause(350, 650)
+    await say((t) => t.planNow)
+    await pause(200, 400)
     const th = push({ from: 'bot', kind: 'thinking', label: `Gemini is writing tomorrow’s plan in ${Lc.name}…` })
     const p = instructionPlan(after)
     const saved = savedVoice(s.id, p, l)
     let text: string
     let url: string | null
     if (saved) {
-      await wait(1300)
+      await pause(1200, 2000)
+      relabel(th, 'Checking the minutes for each valve…')
+      await pause(600, 1100)
       relabel(th, 'Gemini is recording the voice message…')
-      await wait(1200)
+      await pause(1100, 1900)
       text = saved.text
       url = saved.url
     } else {
@@ -249,14 +262,14 @@ export default function Worker() {
         await wait(300)
       }
       await chooseLang('hi')
-      await wait(700)
+      await wait(900)
       await sendPhoto(SAMPLES[0])
     })()
   })
   useEffect(() => {
     if (stage === 'confirm' && autoConfirm.current) {
       autoConfirm.current = false
-      const t = setTimeout(() => void confirm(true), 1300)
+      const t = setTimeout(() => void confirm(true), 1500)
       return () => clearTimeout(t)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -361,6 +374,19 @@ function Bubble({ msg }: { msg: Msg }) {
         <div className="relative overflow-hidden rounded-[15px]">
           <img src={msg.src} alt="Photo of the salt meter in well water" className="h-44 w-full object-cover" />
         </div>
+      </div>
+    )
+  if (msg.kind === 'thinking' && !msg.label)
+    return (
+      <div className="flex w-fit items-center gap-1 rounded-[20px] rounded-bl-md bg-white px-4 py-3.5 shadow-sm" aria-label="typing">
+        {[0, 1, 2].map((i) => (
+          <m.span
+            key={i}
+            className="h-2 w-2 rounded-full bg-ink/35"
+            animate={{ y: [0, -4, 0], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
+          />
+        ))}
       </div>
     )
   if (msg.kind === 'thinking')
