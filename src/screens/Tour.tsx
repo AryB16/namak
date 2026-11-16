@@ -10,6 +10,7 @@ import { CountUp, EASE, Reveal } from '../components/motion'
 import { LANGS } from '../lib/instruction'
 import type { Story } from '../lib/story'
 import demoAssets from '../data/demoAssets.json'
+import SaltBasics from '../components/SaltBasics'
 
 /** Compute the story off the main thread (Web Worker) so the first screen never stalls. */
 function useStory(): Story | null {
@@ -60,14 +61,19 @@ export default function Tour() {
       <Hero />
       {s ? (
         <>
+          <Fade from="night" to="dune" />
+          <SaltBasics />
           <HiddenCost saltM3={s.saltM3} cropM3={s.cropM3} />
           <DebtStory s={s} />
+          <Fade from="dune" to="night" />
           <ValveSection />
+          <Fade from="night" to="dune" />
           <Results s={s} />
+          <Fade from="dune" to="night" />
           <Final from={s.from} to={s.to} />
         </>
       ) : (
-        <div className="h-[100svh] bg-salt" />
+        <div className="h-[100svh] bg-gradient-to-b from-night to-dune" />
       )}
     </div>
   )
@@ -75,21 +81,28 @@ export default function Tour() {
 
 function TourHeader({ ready }: { ready: boolean }) {
   const [tone, setTone] = useState<'dark' | 'light'>('dark')
+  // Match the header to whatever is directly under it (works for pinned sections and the gradient bands).
   useEffect(() => {
-    const els = [...document.querySelectorAll<HTMLElement>('[data-tone]')]
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) if (e.isIntersecting) setTone((e.target as HTMLElement).dataset.tone as 'dark' | 'light')
-      },
-      { rootMargin: '0px 0px -94% 0px' },
-    )
-    els.forEach((el) => io.observe(el))
-    return () => io.disconnect()
+    let raf = 0
+    const check = () => {
+      raf = 0
+      const el = document.elementFromPoint(window.innerWidth / 2, 56)?.closest<HTMLElement>('[data-tone]')
+      if (el) setTone(el.dataset.tone as 'dark' | 'light')
+    }
+    const on = () => {
+      if (!raf) raf = requestAnimationFrame(check)
+    }
+    check()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', on)
+      cancelAnimationFrame(raf)
+    }
   }, [ready])
   const dark = tone === 'dark'
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-40 border-b backdrop-blur-xl backdrop-saturate-150 transition-colors duration-500 ${dark ? 'border-white/10 bg-black/60 text-white' : 'border-black/[0.08] bg-[rgba(251,251,253,0.75)] text-ink'}`}
+      className={`fixed inset-x-0 top-0 z-40 border-b backdrop-blur-xl backdrop-saturate-150 transition-colors duration-500 ${dark ? 'border-white/10 bg-black/60 text-white' : 'border-black/[0.08] bg-[rgba(241,232,218,0.8)] text-ink'}`}
     >
       <div className="mx-auto flex h-12 max-w-[1080px] items-center justify-between px-4 md:px-6">
         <span className="flex items-center gap-2">
@@ -101,6 +114,18 @@ function TourHeader({ ready }: { ready: boolean }) {
         </button>
       </div>
     </header>
+  )
+}
+
+/** A soft gradient band between dark and light sections, so the page never flips from black to light in one line. */
+function Fade({ from, to }: { from: 'night' | 'dune'; to: 'night' | 'dune' }) {
+  const c = { night: '#000000', dune: '#f1e8da' }
+  const tone = (k: 'night' | 'dune') => (k === 'night' ? 'dark' : 'light')
+  return (
+    <div aria-hidden className="flex h-40 flex-col md:h-56" style={{ background: `linear-gradient(${c[from]}, #3d342b 45%, ${c[to]})` }}>
+      <div data-tone={tone(from)} className="flex-1" />
+      <div data-tone={tone(to)} className="flex-1" />
+    </div>
   )
 }
 
@@ -148,7 +173,7 @@ function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: EASE, delay: 0.35 }}
         >
-          Every litre of well water leaves a little salt in the soil. Namak works out how much water each crop really needs — and tells the farm worker, by voice.
+          Desert farms water from salty wells. Get the amount wrong and you either waste water or slowly ruin the soil. Namak works out the right amount every day — and tells the farm worker, by voice.
         </m.p>
         <m.div
           className="mx-auto mt-10 flex w-full max-w-[520px] flex-col gap-3 sm:flex-row sm:justify-center"
@@ -194,24 +219,25 @@ function Hero() {
 function HiddenCost({ saltM3, cropM3 }: { saltM3: number; cropM3: number }) {
   const total = saltM3 + cropM3
   return (
-    <section data-tone="light" className="bg-salt px-6 py-28 text-ink md:py-40">
+    <section data-tone="light" className="bg-dune px-6 py-28 text-ink md:py-40">
       <div className="mx-auto max-w-[980px] text-center">
         <Reveal>
-          <p className="text-[17px] font-semibold text-teal-water md:text-[21px]">The first problem</p>
-          <h2 className="mt-3 text-[40px] leading-[1.05] font-semibold md:text-[64px]">Salt is the hidden water cost.</h2>
+          <p className="text-[17px] font-semibold text-teal-water md:text-[21px]">Problem 1 · the hidden water cost</p>
+          <h2 className="mt-3 text-[40px] leading-[1.05] font-semibold md:text-[64px]">So part of every watering is just for salt.</h2>
+          <p className="mx-auto mt-4 max-w-[600px] text-[19px] leading-snug text-ink/70 md:text-[21px]">On one small example farm near Al Ain, that extra water adds up to:</p>
         </Reveal>
         <Reveal delay={0.1}>
-          <p className="mt-14 text-[72px] leading-none font-semibold tracking-[-0.05em] text-teal-water tabular md:text-[148px]">
+          <p className="mt-10 text-[72px] leading-none font-semibold tracking-[-0.05em] text-teal-water tabular md:text-[148px]">
             <CountUp value={saltM3} duration={1.6} />
             <span className="ml-2 text-[0.35em] tracking-tight text-ink/65">m³</span>
           </p>
           <p className="mx-auto mt-5 max-w-[620px] text-[19px] leading-snug text-ink/70 md:text-[22px]">
-            of water a year (1 m³ = 1,000 litres) — just to wash salt away from the roots, on one small farm near Al Ain. Farmers guess
-            this number. Namak calculates it, every day.
+            of water a year (1 m³ = 1,000 litres), used only to wash salt down past the roots. Most farms never measure this — they
+            guess. Namak calculates it for each crop, every day.
           </p>
         </Reveal>
         <Reveal delay={0.15} className="mx-auto mt-16 max-w-[760px] text-left">
-          <div className="flex h-14 w-full overflow-hidden rounded-2xl bg-sand-200">
+          <div className="flex h-14 w-full overflow-hidden rounded-2xl bg-dune-2">
             <m.div
               className="flex items-center bg-teal-water px-4 text-[13px] font-semibold text-white"
               initial={{ width: 0 }}
@@ -263,24 +289,24 @@ function DebtStory({ s }: { s: Story }) {
 
   const steps = [
     {
-      k: 'The habit',
-      t: `The same ${s.palms.v.habitMinutes} minutes, every day.`,
-      b: 'This is how the worker waters the palms all year. In winter it is far too much water. In summer it is not enough to wash the salt away.',
+      k: 'Problem 2 · salt debt',
+      t: 'The habit: the same minutes, every day.',
+      b: `Most farms water by habit. Here the worker gives the palms ${s.palms.v.habitMinutes} minutes a day, all year. In winter that is far more than palms drink. In summer it is not enough to wash the salt down.`,
     },
     {
-      k: 'The second problem: salt debt',
+      k: 'Problem 2 · salt debt',
       t: 'Salt builds up like a debt.',
-      b: `By summer the soil holds ${Math.round(s.palmPeakPct)}% more salt than palms can handle, and it stays too salty for ${s.palmHabitOver} days of the year.`,
+      b: `Every watering leaves a little salt — like borrowing. Every extra wash pays some back. With the habit the debt grows all summer: the soil ends up ${Math.round(s.palmPeakPct)}% saltier than palms can take, and stays over the safe line for ${s.palmHabitOver} days.`,
     },
     {
       k: 'Namak',
-      t: 'Namak pays it back on cool days.',
-      b: `It adds just enough extra water every day, and a bigger wash on the coolest days, when plants drink least. The soil was too salty on only ${s.palmNamakOver} day.`,
+      t: 'Namak pays the debt back on cool days.',
+      b: `It adds just enough extra water each day, and saves the bigger washes for the coolest days, when plants drink least. The soil went over the safe line on only ${s.palmNamakOver} ${s.palmNamakOver === 1 ? 'day' : 'days'}.`,
     },
   ]
 
   return (
-    <section ref={ref} data-tone="light" className="relative h-[320vh] bg-sand-100 text-ink">
+    <section ref={ref} data-tone="light" className="relative h-[320vh] bg-dune text-ink">
       <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden px-6">
         <div className="mx-auto grid w-full max-w-[1080px] items-center gap-10 md:grid-cols-[0.9fr_1.1fr]">
           <div className="relative min-h-[220px]">
@@ -299,7 +325,7 @@ function DebtStory({ s }: { s: Story }) {
               </m.div>
             ))}
           </div>
-          <div className="rounded-[28px] bg-salt p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.35)] md:p-7">
+          <div className="rounded-[28px] bg-dune-card p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.35)] md:p-7">
             <div className="flex items-baseline justify-between">
               <p className="text-[13px] font-semibold text-ink/70">Salt in the soil around the palm roots</p>
               <p className="text-[12px] text-ink/65">dS/m · ERA5 weather</p>
@@ -325,6 +351,9 @@ function DebtStory({ s }: { s: Story }) {
                 <span className="h-1 w-5 rounded-full bg-teal-water" /> Namak
               </m.span>
             </div>
+            <p className="mt-3 text-[13px] leading-snug text-ink/65">
+              How salty the soil around the palm roots gets, through one real year of weather. Above the red line, palms start to lose harvest.
+            </p>
           </div>
         </div>
       </div>
@@ -342,13 +371,13 @@ function ValveSection() {
   return (
     <section ref={ref} data-tone="dark" className="overflow-hidden bg-night px-6 py-28 md:py-40">
       <div className="mx-auto grid max-w-[1080px] items-center gap-14 md:grid-cols-2">
-        <div>
+        <div className="min-w-0">
           <Reveal>
-            <p className="text-[17px] font-semibold text-glow-salt">The third problem</p>
+            <p className="text-[17px] font-semibold text-glow-salt">Problem 3 · the person at the tap</p>
             <h2 className="mt-3 text-[40px] leading-[1.05] font-semibold md:text-[60px]">The person with the plan isn’t the one at the tap.</h2>
             <p className="mt-6 max-w-[460px] text-[19px] leading-snug text-white/70">
-              The owner decides. A hired worker opens the valves — often by habit, often in another language. Namak sends tomorrow’s
-              exact minutes as a voice note in theirs.
+              The owner makes the plan, but a hired worker opens the valves — usually the same minutes every day, and often in a
+              language the owner doesn’t speak. Namak turns tomorrow’s plan into a short voice note in the worker’s own language.
             </p>
           </Reveal>
           <div className="mt-10 space-y-3">
@@ -366,8 +395,8 @@ function ValveSection() {
           <Reveal delay={0.2} className="mt-12 flex items-center gap-5">
             <img src="/samples/ec-3.82-mscm.svg" alt="An EC pen display reading 3.82 mS/cm" className="h-28 w-20 rounded-xl object-cover" />
             <p className="max-w-[340px] text-[17px] leading-snug text-white/70">
-              The worker closes the loop with a photo of a <strong className="text-white">~AED 100 EC pen</strong>. AI reads the
-              display, the owner confirms, and tomorrow’s plan updates.
+              To check the salt, the worker photographs a cheap salt meter — a <strong className="text-white">~AED 100 EC pen</strong>.
+              AI reads the number, the owner confirms, and tomorrow’s plan adjusts.
             </p>
           </Reveal>
         </div>
@@ -420,14 +449,14 @@ function ValveSection() {
 /* 5 — Results */
 function Results({ s }: { s: Story }) {
   const tiles: { big: ReactNode; label: string; tone: string }[] = [
-    { big: <CountUp value={s.savedPct} format={(n) => `${Math.round(n)}%`} />, label: 'less water across the farm than the worker’s habit', tone: 'text-teal-water' },
+    { big: <CountUp value={s.savedPct} format={(n) => `${Math.round(n)}%`} />, label: 'less water across the whole farm than the habit', tone: 'text-teal-water' },
     {
       big: (
         <>
           <CountUp value={s.palmHabitOver} /> → <CountUp value={s.palmNamakOver} />
         </>
       ),
-      label: 'days the palms spent over their salt limit',
+      label: 'days the palms’ soil was too salty, habit → Namak',
       tone: 'text-[#9a5d12]',
     },
     {
@@ -436,24 +465,24 @@ function Results({ s }: { s: Story }) {
           <CountUp value={s.tomatoHabit} format={(n) => `${Math.round(n)}%`} /> → <CountUp value={s.tomatoNamak} format={(n) => `${Math.round(n)}%`} />
         </>
       ),
-      label: 'tomato yield, habit → Namak',
+      label: 'tomato harvest, habit → Namak (100% = no salt damage)',
       tone: 'text-green-ok',
     },
     { big: <>AED 100</>, label: 'the only hardware: an EC pen. No sensors, no subscription.', tone: 'text-ink' },
   ]
   return (
-    <section data-tone="light" className="bg-salt px-6 py-28 text-ink md:py-40">
+    <section data-tone="light" className="bg-dune px-6 py-28 text-ink md:py-40">
       <div className="mx-auto max-w-[1080px]">
         <Reveal className="text-center">
           <p className="text-[17px] font-semibold text-teal-water md:text-[21px]">Does it beat the guess?</p>
           <h2 className="mt-3 text-[40px] leading-[1.05] font-semibold md:text-[64px]">A real year, replayed.</h2>
           <p className="mx-auto mt-4 max-w-[600px] text-[19px] text-ink/70">
-            The same farm, the same well, the same 365 days of real weather. The worker’s habit versus Namak, day by day.
+            We replayed the same farm and the same well through 365 days of real weather — once with the worker’s habit, once with Namak.
           </p>
         </Reveal>
         <div className="mt-16 grid gap-4 md:grid-cols-2">
           {tiles.map((t, i) => (
-            <Reveal key={t.label} delay={i * 0.08} className="rounded-[28px] bg-sand-100 p-8 md:p-10">
+            <Reveal key={t.label} delay={i * 0.08} className="rounded-[28px] bg-dune-card p-8 md:p-10">
               <p className={`text-[56px] leading-none font-semibold tracking-[-0.04em] tabular md:text-[80px] ${t.tone}`}>{t.big}</p>
               <p className="mt-4 max-w-[360px] text-[17px] leading-snug text-ink/70">{t.label}</p>
             </Reveal>

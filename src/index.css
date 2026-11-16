@@ -20,6 +20,10 @@
   --color-night-2: #1d1d1f;
   --color-glow-water: #5fd3c6;
   --color-glow-salt: #ffb547;
+  /* story page light sections: warm sand instead of stark white */
+  --color-dune: #f1e8da;
+  --color-dune-2: #e9dcc8;
+  --color-dune-card: #faf5ec;
 
   /* SF Pro on Apple devices (system font); Inter as the closest match elsewhere. */
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Variable", "Helvetica Neue", Arial, sans-serif;
