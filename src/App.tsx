@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react'
 import { IconCompare, IconFarm, IconReplay, IconTomorrow, IconWorker } from './components/icons'
 import { EASE } from './components/motion'
@@ -36,7 +36,9 @@ function readRoute(): Route {
 }
 
 function StatusBanner() {
-  const { online, forecast, forecastError } = useApp()
+  const { online, forecast, forecastError, forecastLoading } = useApp()
+  // Don't flash a warning while a cached plan is shown and the live forecast is still on its way.
+  if (online && forecastLoading) return null
   let msg: string | null = null
   let tone = 'bg-amber-warn text-ink'
   if (forecastError && !forecast) {
@@ -108,12 +110,9 @@ export default function App() {
                 key={t.id}
                 href={`#${t.id}`}
                 aria-current={route === t.id ? 'page' : undefined}
-                className={`relative rounded-full px-3 py-2 text-[13px] font-medium transition-colors ${route === t.id ? 'text-ink' : 'text-ink/65 hover:text-ink'}`}
+                className={`rounded-full px-3 py-2 text-[13px] font-medium transition-colors duration-300 ${route === t.id ? 'bg-black/[0.06] text-ink' : 'text-ink/65 hover:bg-black/[0.03] hover:text-ink'}`}
               >
-                {route === t.id && (
-                  <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-full bg-black/[0.06]" transition={{ duration: 0.35, ease: EASE }} />
-                )}
-                <span className="relative">{t.label}</span>
+                {t.label}
               </a>
             ))}
           </nav>
@@ -134,7 +133,7 @@ export default function App() {
       </header>
 
       <AnimatePresence mode="wait" initial={false}>
-        <motion.main
+        <m.main
           key={route}
           className="mx-auto max-w-[1080px] px-4 pt-6 pb-10 md:px-6 md:pt-10"
           initial={{ opacity: 0, y: 10 }}
@@ -150,7 +149,7 @@ export default function App() {
             {route === 'farm' && <Setup />}
             {route === 'why' && <Why />}
           </Suspense>
-        </motion.main>
+        </m.main>
       </AnimatePresence>
 
       <footer className="mx-auto hidden max-w-[1080px] px-6 pb-10 text-[12px] text-ink/65 md:block">

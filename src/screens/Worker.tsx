@@ -411,7 +411,7 @@ function Phone({ children }: { children: React.ReactNode }) {
 
 function ChatHeader() {
   return (
-    <div className="flex items-center gap-3 border-b border-black/5 bg-white/85 px-4 py-3 text-ink backdrop-blur">
+    <div className="flex items-center gap-3 border-b border-black/5 bg-white/85 px-4 py-3 text-ink">
       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-glow-salt text-[15px] font-semibold text-ink">W</div>
       <div className="leading-tight">
         <p className="text-[15px] font-semibold">Farm worker</p>

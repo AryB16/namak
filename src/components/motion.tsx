@@ -1,5 +1,5 @@
-import { animate, motion, useInView, useReducedMotion, type HTMLMotionProps } from 'motion/react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { animate, m, useInView, useReducedMotion, type HTMLMotionProps } from 'motion/react'
+import { useEffect, useRef, type ReactNode } from 'react'
 
 export const EASE = [0.23, 1, 0.32, 1] as const
 
@@ -19,7 +19,7 @@ export function Reveal({
   as?: 'div' | 'section' | 'li' | 'p' | 'h1' | 'h2'
   amount?: number
 }) {
-  const M = motion[as] as typeof motion.div
+  const M = m[as] as typeof m.div
   return (
     <M
       className={className}
@@ -36,7 +36,7 @@ export function Reveal({
 /** Children reveal one after another (60 ms apart, max ~5 visible steps). */
 export function Stagger({ children, className, gap = 0.06 }: { children: ReactNode; className?: string; gap?: number }) {
   return (
-    <motion.div
+    <m.div
       className={className}
       initial="hidden"
       whileInView="show"
@@ -44,23 +44,26 @@ export function Stagger({ children, className, gap = 0.06 }: { children: ReactNo
       variants={{ hidden: {}, show: { transition: { staggerChildren: gap } } }}
     >
       {children}
-    </motion.div>
+    </m.div>
   )
 }
 
 export function StaggerItem({ children, className, ...rest }: { children: ReactNode; className?: string } & HTMLMotionProps<'div'>) {
   return (
-    <motion.div
+    <m.div
       className={className}
       variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } } }}
       {...rest}
     >
       {children}
-    </motion.div>
+    </m.div>
   )
 }
 
-/** Number that counts up from 0 the first time it scrolls into view, then tweens to new values. */
+/**
+ * Number that counts up from 0 the first time it scrolls into view, then tweens to new values.
+ * Writes straight to the DOM (no React re-render per frame).
+ */
 export function CountUp({
   value,
   format = (n) => Math.round(n).toLocaleString('en-US'),
@@ -75,12 +78,15 @@ export function CountUp({
   const ref = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, { once: true, amount: 0.6 })
   const reduce = useReducedMotion()
-  const [shown, setShown] = useState(reduce ? value : 0)
   const from = useRef(0)
+  const fmt = useRef(format)
+  fmt.current = format
   useEffect(() => {
-    if (!inView) return
+    const el = ref.current
+    if (!el || !inView) return
     if (reduce || !Number.isFinite(value)) {
-      setShown(value)
+      el.textContent = fmt.current(value)
+      from.current = value
       return
     }
     const ctl = animate(from.current, value, {
@@ -88,14 +94,14 @@ export function CountUp({
       ease: EASE,
       onUpdate: (v) => {
         from.current = v
-        setShown(v)
+        el.textContent = fmt.current(v)
       },
     })
     return () => ctl.stop()
   }, [inView, value, reduce, duration])
   return (
     <span ref={ref} className={className}>
-      {format(shown)}
+      {format(reduce ? value : 0)}
     </span>
   )
 }

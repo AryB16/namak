@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 import { useId, useState, type ReactNode } from 'react'
 import { EASE, Stagger, StaggerItem } from './motion'
 
@@ -34,7 +34,7 @@ export function Term({ k, children, dark = false }: { k: keyof typeof GLOSSARY |
       </button>
       <AnimatePresence>
         {open && (
-          <motion.span
+          <m.span
             id={id}
             role="tooltip"
             initial={{ opacity: 0, y: 6, scale: 0.98 }}
@@ -44,7 +44,7 @@ export function Term({ k, children, dark = false }: { k: keyof typeof GLOSSARY |
             className="absolute bottom-full left-1/2 z-40 mb-2 w-[260px] -translate-x-1/2 rounded-2xl bg-ink px-3.5 py-2.5 text-left text-[13px] leading-snug font-normal text-white shadow-xl"
           >
             {GLOSSARY[k as string] ?? ''}
-          </motion.span>
+          </m.span>
         )}
       </AnimatePresence>
     </span>

@@ -1,4 +1,4 @@
-import { motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from 'motion/react'
+import { m, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from 'motion/react'
 import type { ReactNode } from 'react'
 
 /** Card that tilts a few degrees toward the cursor, with a soft light sheen that follows it. Fine pointers only. */
@@ -14,7 +14,7 @@ export default function Tilt({ children, className = '', max = 5 }: { children: 
   if (reduce || !fine) return <div className={className}>{children}</div>
 
   return (
-    <motion.div
+    <m.div
       className={`relative [transform-style:preserve-3d] ${className}`}
       style={{ rotateX: rx, rotateY: ry, transformPerspective: 900 }}
       onPointerMove={(e) => {
@@ -32,7 +32,7 @@ export default function Tilt({ children, className = '', max = 5 }: { children: 
       }}
     >
       {children}
-      <motion.div aria-hidden className="pointer-events-none absolute inset-0 rounded-[28px] mix-blend-soft-light" style={{ background: sheen }} />
-    </motion.div>
+      <m.div aria-hidden className="pointer-events-none absolute inset-0 rounded-[28px] mix-blend-soft-light" style={{ background: sheen }} />
+    </m.div>
   )
 }

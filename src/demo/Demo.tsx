@@ -2,7 +2,7 @@
  * Guided 60-second demo: moves through the real screens, highlights what it talks about, and triggers real actions
  * (slider sweep, voice note, EC photo read + confirm). The farm is restored when the demo ends.
  */
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { EASE } from '../components/motion'
 import { markToured } from '../lib/tour'
@@ -172,7 +172,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 function DemoBar({ step, paused, onPause, onNext, onExit }: { step: number; paused: boolean; onPause: () => void; onNext: () => void; onExit: () => void }) {
   const s = STEPS[step]
   return (
-    <motion.div
+    <m.div
       role="dialog"
       aria-label="Guided demo"
       className="fixed inset-x-3 bottom-[calc(76px+env(safe-area-inset-bottom))] z-50 mx-auto max-w-[620px] md:inset-x-auto md:right-6 md:bottom-6 md:w-[420px]"
@@ -187,7 +187,7 @@ function DemoBar({ step, paused, onPause, onNext, onExit }: { step: number; paus
             <div key={i} className="h-1 flex-1 overflow-hidden rounded-full bg-white/15">
               {i < step && <div className="h-full w-full bg-white" />}
               {i === step && (
-                <motion.div
+                <m.div
                   key={`${step}-${paused}`}
                   className="h-full bg-glow-water"
                   initial={{ width: paused ? '50%' : '0%' }}
@@ -199,7 +199,7 @@ function DemoBar({ step, paused, onPause, onNext, onExit }: { step: number; paus
           ))}
         </div>
         <AnimatePresence mode="wait">
-          <motion.p
+          <m.p
             key={step}
             className="mt-3.5 text-[16px] leading-snug md:text-[17px]"
             initial={{ opacity: 0, y: 8 }}
@@ -209,7 +209,7 @@ function DemoBar({ step, paused, onPause, onNext, onExit }: { step: number; paus
             aria-live="polite"
           >
             {s.caption}
-          </motion.p>
+          </m.p>
         </AnimatePresence>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-[13px] text-white/60 tabular">
@@ -228,19 +228,19 @@ function DemoBar({ step, paused, onPause, onNext, onExit }: { step: number; paus
           </div>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }
 
 function DemoEnd({ onExplore, onAgain }: { onExplore: () => void; onAgain: () => void }) {
   return (
-    <motion.div
+    <m.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-md"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <motion.div
+      <m.div
         role="dialog"
         aria-label="Demo finished"
         className="w-full max-w-[480px] rounded-[32px] bg-night p-8 text-center text-white ring-1 ring-white/10"
@@ -258,7 +258,7 @@ function DemoEnd({ onExplore, onAgain }: { onExplore: () => void; onAgain: () =>
             Watch again
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   )
 }

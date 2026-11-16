@@ -4,7 +4,7 @@ import { useDemoEvent } from '../demo/Demo'
 import { Button, Card, Eyebrow, SaltGauge, SourceTag } from '../components/ui'
 import { Term } from '../components/explain'
 import { EASE } from '../components/motion'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import { CROPS } from '../engine/crops'
 import { compareYear, type YearValve } from '../engine/farm'
 import { aed, int, one, pct } from '../lib/format'
@@ -255,7 +255,7 @@ function ValveCompare({ v, canBlend }: { v: YearValve; canBlend: boolean }) {
 
 /** Month-by-month water: the habit's flat line vs Namak following the seasons. */
 function MonthlyChart({ monthly }: { monthly: { month: string; namakL: number; habitL: number }[] }) {
-  const max = Math.max(...monthly.map((m) => Math.max(m.namakL, m.habitL)), 1) * 1.08
+  const max = Math.max(...monthly.map((mo) => Math.max(mo.namakL, mo.habitL)), 1) * 1.08
   const H = 180
   const label = (m: string, i: number) => {
     const name = new Date(m + '-15T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })
@@ -270,25 +270,25 @@ function MonthlyChart({ monthly }: { monthly: { month: string; namakL: number; h
         weather.
       </p>
       <div className="mt-6 flex items-end gap-1.5 sm:gap-3" style={{ height: H + 28 }} role="img" aria-label="Monthly water use, habit versus Namak">
-        {monthly.map((m, i) => (
-          <div key={m.month} className="flex h-full flex-1 flex-col items-center justify-end">
+        {monthly.map((mo, i) => (
+          <div key={mo.month} className="flex h-full flex-1 flex-col items-center justify-end">
             <div className="flex w-full items-end justify-center gap-[3px]">
-              <motion.div
+              <m.div
                 className="w-1/2 max-w-[18px] rounded-t-[6px] bg-sand-300"
                 initial={{ height: 0 }}
-                whileInView={{ height: (m.habitL / max) * H }}
+                whileInView={{ height: (mo.habitL / max) * H }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, ease: EASE, delay: i * 0.04 }}
               />
-              <motion.div
+              <m.div
                 className="w-1/2 max-w-[18px] rounded-t-[6px] bg-teal-water"
                 initial={{ height: 0 }}
-                whileInView={{ height: (m.namakL / max) * H }}
+                whileInView={{ height: (mo.namakL / max) * H }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, ease: EASE, delay: 0.1 + i * 0.04 }}
               />
             </div>
-            <span className="mt-2 text-[11px] font-medium text-ink/65">{label(m.month, i)}</span>
+            <span className="mt-2 text-[11px] font-medium text-ink/65">{label(mo.month, i)}</span>
           </div>
         ))}
       </div>

@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import type { ReactNode } from 'react'
 import type { Crop } from '../engine/crops'
 import { one } from '../lib/format'
@@ -76,7 +76,7 @@ export function SaltGauge({
         <div className="absolute inset-y-0 left-0 rounded-l-full bg-green-ok/80" style={{ width: `${pc(target)}%` }} />
         <div className="absolute inset-y-0 bg-amber-warn/80" style={{ left: `${pc(target)}%`, width: `${pc(crop.ec90) - pc(target)}%` }} />
         <div className="absolute inset-y-0 right-0 rounded-r-full bg-red-debt/75" style={{ left: `${pc(crop.ec90)}%` }} />
-        <motion.div
+        <m.div
           className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.22)]"
           initial={{ left: '0%' }}
           animate={{ left: `${pc(ece)}%` }}
@@ -87,7 +87,7 @@ export function SaltGauge({
               {one(ece)}
             </span>
           )}
-        </motion.div>
+        </m.div>
       </div>
       <div className={compact ? 'h-6' : 'h-3'} />
       {!compact && (
@@ -131,7 +131,7 @@ export function Button({
     quiet: 'bg-black/[0.05] text-ink hover:bg-black/[0.08]',
   }
   return (
-    <motion.button
+    <m.button
       type={type}
       onClick={onClick}
       disabled={disabled}
@@ -140,6 +140,6 @@ export function Button({
       className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold transition-[filter,background-color] disabled:opacity-45 ${v[variant]} ${className}`}
     >
       {children}
-    </motion.button>
+    </m.button>
   )
 }

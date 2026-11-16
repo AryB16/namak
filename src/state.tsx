@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { DEMO_FARM } from './data/demoFarm'
-import { getForecast, getLastYear, type WeatherResult } from './data/weather'
+import { getForecast, getLastYear, peekForecast, peekLastYear, type WeatherResult } from './data/weather'
 import type { Farm, WeatherDay } from './engine/plan'
 
 const FARM_KEY = 'namak.farm.v1'
@@ -32,6 +32,8 @@ interface AppState {
   isDemo: boolean
   forecast: WeatherResult | null
   forecastError: string | null
+  /** True while the live forecast is being fetched (a cached one may already be on screen). */
+  forecastLoading: boolean
   /** Plan days from tomorrow onward (up to 7). */
   planDays: WeatherDay[]
   year: WeatherResult | null
@@ -60,9 +62,11 @@ function planDaysFrom(fc: WeatherResult | null): WeatherDay[] {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [farm, setFarmState] = useState<Farm>(loadFarm)
-  const [forecast, setForecast] = useState<WeatherResult | null>(null)
+  // Instant first paint: start from the last saved forecast (if recent) while the live one loads.
+  const [forecast, setForecast] = useState<WeatherResult | null>(() => peekForecast(loadFarm().lat, loadFarm().lon))
+  const [forecastLoading, setForecastLoading] = useState(true)
   const [forecastError, setForecastError] = useState<string | null>(null)
-  const [year, setYear] = useState<WeatherResult | null>(null)
+  const [year, setYear] = useState<WeatherResult | null>(() => peekLastYear(loadFarm().lat, loadFarm().lon))
   const [yearError, setYearError] = useState<string | null>(null)
   const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))
   const [readings, setReadings] = useState<ECReading[]>(() => {
@@ -120,14 +124,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let alive = true
     setForecastError(null)
+    setForecastLoading(true)
     getForecast(farm.lat, farm.lon)
       .then((r) => alive && setForecast(r))
       .catch(() => alive && setForecastError('No forecast yet — connect once to load the plan.'))
-    getLastYear(farm.lat, farm.lon)
-      .then((r) => alive && setYear(r))
-      .catch(() => alive && setYearError('Historical weather is not available offline for this location yet.'))
+      .finally(() => alive && setForecastLoading(false))
+    // The year of history is only needed on the comparison screens: load it after the first screen is up.
+    const loadYear = () =>
+      getLastYear(farm.lat, farm.lon)
+        .then((r) => alive && setYear(r))
+        .catch(() => alive && setYearError('Historical weather is not available offline for this location yet.'))
+    const idle = 'requestIdleCallback' in window
+    const t = idle ? window.requestIdleCallback(loadYear, { timeout: 2500 }) : window.setTimeout(loadYear, 1200)
     return () => {
       alive = false
+      if (idle) window.cancelIdleCallback(t)
+      else clearTimeout(t)
     }
   }, [farm.lat, farm.lon, tick, online])
 
@@ -139,6 +151,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isDemo: farm === DEMO_FARM,
       forecast,
       forecastError,
+      forecastLoading,
       planDays: planDaysFrom(forecast),
       year,
       yearError,
@@ -147,7 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addReading,
       refresh: () => setTick((t) => t + 1),
     }),
-    [farm, setFarm, resetFarm, forecast, forecastError, year, yearError, online, readings, addReading],
+    [farm, setFarm, resetFarm, forecast, forecastError, forecastLoading, year, yearError, online, readings, addReading],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

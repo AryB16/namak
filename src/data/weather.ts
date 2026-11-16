@@ -153,3 +153,24 @@ export async function getLastYear(lat: number, lon: number, today = new Date()):
     'Historical weather · ERA5 via Open-Meteo',
   )
 }
+
+/** Read a cached forecast synchronously (for an instant first paint), if it is less than 36 h old. */
+export function peekForecast(lat: number, lon: number): WeatherResult | null {
+  const c = readCache(`fc:${lat.toFixed(2)},${lon.toFixed(2)}`)
+  if (!c || Date.now() - Date.parse(c.fetchedAt) > 36 * 3_600_000) return null
+  return { ...c, source: 'cache', label: 'Live forecast · Open-Meteo' }
+}
+
+/** Read the most recent cached ERA5 year synchronously, if any. */
+export function peekLastYear(lat: number, lon: number): WeatherResult | null {
+  try {
+    const prefix = `${KEY}era5:${lat.toFixed(2)},${lon.toFixed(2)}:`
+    const keys = Object.keys(localStorage).filter((k) => k.startsWith(prefix)).sort()
+    const k = keys[keys.length - 1]
+    if (!k) return null
+    const c = JSON.parse(localStorage.getItem(k) || 'null') as { days: WeatherDay[]; fetchedAt: string } | null
+    return c ? { ...c, source: 'cache', label: 'Historical weather · ERA5 via Open-Meteo' } : null
+  } catch {
+    return null
+  }
+}

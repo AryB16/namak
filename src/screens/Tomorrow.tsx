@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { Button, Card, SaltGauge, SourceTag } from '../components/ui'
 import { IconSend } from '../components/icons'
@@ -50,7 +50,7 @@ export default function Tomorrow() {
         <section data-demo="hero" className="relative overflow-hidden rounded-[32px] bg-night p-6 text-white md:p-10">
           <div
             aria-hidden
-            className="absolute -top-32 -left-24 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(95,211,198,0.32),transparent_65%)] blur-2xl"
+            className="absolute -top-32 -left-24 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(95,211,198,0.32),transparent_65%)]"
           />
           <div className="relative grid gap-8 md:grid-cols-[1.15fr_1fr] md:items-end">
             <div>
@@ -76,7 +76,7 @@ export default function Tomorrow() {
               </a>
             </div>
 
-            <div className="rounded-[24px] bg-white/[0.06] p-5 ring-1 ring-white/10 backdrop-blur md:p-6">
+            <div className="rounded-[24px] bg-white/[0.06] p-5 ring-1 ring-white/10 md:p-6">
               <p className="mb-4 text-[13px] text-white/60">Compared with what the worker usually does</p>
               <CompareBar label="Usual habit (same every day)" min={habitMin} l={habitL} max={Math.max(habitMin, totalMin)} tone="habit" />
               <CompareBar label="Namak’s plan" min={totalMin} l={namakL} max={Math.max(habitMin, totalMin)} tone="namak" />
@@ -127,7 +127,7 @@ function CompareBar({ label, min, l, max, tone }: { label: string; min: number; 
         </span>
       </div>
       <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">
-        <motion.div
+        <m.div
           className={`h-full rounded-full ${tone === 'namak' ? 'bg-glow-water' : 'bg-white/40'}`}
           initial={{ width: 0 }}
           animate={{ width: `${(min / max) * 100}%` }}
@@ -233,7 +233,7 @@ function WeekChart({ valves, weather, live }: { valves: ValvePlan[]; weather: We
                 className={`flex w-full max-w-[64px] flex-col-reverse overflow-hidden rounded-t-[12px] rounded-b-[6px] ${wash ? 'ring-2 ring-amber-warn ring-offset-2 ring-offset-transparent' : ''}`}
               >
                 {valves.map((v, j) => (
-                  <motion.div
+                  <m.div
                     key={v.valve.id}
                     style={{ background: VALVE_COLORS[j % VALVE_COLORS.length] }}
                     initial={{ height: 0 }}

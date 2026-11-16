@@ -2,7 +2,7 @@
  * First-visit story (apple.com-style scroll). Every number is computed by the engine from the bundled ERA5 year for
  * the illustrative demo farm — nothing is hard-coded.
  */
-import { motion, useMotionValueEvent, useScroll, useTransform } from 'motion/react'
+import { m, useMotionValueEvent, useScroll, useTransform } from 'motion/react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { markToured } from '../lib/tour'
 import { CountUp, EASE, Reveal } from '../components/motion'
@@ -124,44 +124,44 @@ function Hero() {
   const words = ['Your', 'well', 'is', 'salty.']
   return (
     <section ref={ref} data-tone="dark" className="relative flex h-[100svh] min-h-[560px] items-center justify-center overflow-hidden px-6">
-      <motion.div
+      <m.div
         aria-hidden
-        className="absolute top-1/2 left-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(95,211,198,0.35),rgba(95,211,198,0)_65%)] blur-2xl"
+        className="absolute top-1/2 left-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(95,211,198,0.35),rgba(95,211,198,0)_65%)]"
         animate={{ scale: [1, 1.12, 1], opacity: [0.8, 1, 0.8] }}
         transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <motion.div style={{ scale, opacity }} className="relative text-center">
-        <motion.p
+      <m.div style={{ scale, opacity }} className="relative text-center">
+        <m.p
           className="text-[15px] font-semibold text-glow-salt md:text-[17px]"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: EASE }}
         >
           Namak · smarter watering for salty wells
-        </motion.p>
+        </m.p>
         <h1 className="mt-4 text-[56px] leading-[1] font-semibold tracking-[-0.04em] md:text-[112px]">
           {words.map((w, i) => (
-            <motion.span
+            <m.span
               key={w}
               className="inline-block pr-[0.22em]"
-              initial={{ opacity: 0, y: 40, filter: 'blur(12px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, ease: EASE, delay: 0.05 + i * 0.08 }}
             >
               {w}
-            </motion.span>
+            </m.span>
           ))}
         </h1>
-        <motion.p
+        <m.p
           className="mx-auto mt-6 max-w-[560px] text-[19px] leading-snug text-white/70 md:text-[24px]"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: EASE, delay: 0.35 }}
         >
           Every litre of well water leaves a little salt in the soil. Namak works out how much water each crop really needs — and tells the farm worker, by voice.
-        </motion.p>
-      </motion.div>
-      <motion.div
+        </m.p>
+      </m.div>
+      <m.div
         aria-hidden
         className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/50"
         animate={{ y: [0, 8, 0] }}
@@ -170,7 +170,7 @@ function Hero() {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M6 9l6 6 6-6" />
         </svg>
-      </motion.div>
+      </m.div>
     </section>
   )
 }
@@ -197,7 +197,7 @@ function HiddenCost({ saltM3, cropM3 }: { saltM3: number; cropM3: number }) {
         </Reveal>
         <Reveal delay={0.15} className="mx-auto mt-16 max-w-[760px] text-left">
           <div className="flex h-14 w-full overflow-hidden rounded-2xl bg-sand-200">
-            <motion.div
+            <m.div
               className="flex items-center bg-teal-water px-4 text-[13px] font-semibold text-white"
               initial={{ width: 0 }}
               whileInView={{ width: `${(cropM3 / total) * 100}%` }}
@@ -205,8 +205,8 @@ function HiddenCost({ saltM3, cropM3 }: { saltM3: number; cropM3: number }) {
               transition={{ duration: 1.2, ease: EASE }}
             >
               <span className="whitespace-nowrap">For the crop</span>
-            </motion.div>
-            <motion.div
+            </m.div>
+            <m.div
               className="flex items-center justify-center bg-amber-warn text-[13px] font-semibold text-ink"
               initial={{ width: 0 }}
               whileInView={{ width: `${(saltM3 / total) * 100}%` }}
@@ -214,7 +214,7 @@ function HiddenCost({ saltM3, cropM3 }: { saltM3: number; cropM3: number }) {
               transition={{ duration: 1.2, ease: EASE, delay: 0.5 }}
             >
               <span className="whitespace-nowrap">Salt</span>
-            </motion.div>
+            </m.div>
           </div>
           <p className="mt-3 text-[13px] text-ink/65">
             A year of water on the example farm: {Math.round(cropM3).toLocaleString('en-US')} m³ for the plants to drink + {Math.round(saltM3).toLocaleString('en-US')} m³
@@ -270,7 +270,7 @@ function DebtStory({ s }: { s: Story }) {
         <div className="mx-auto grid w-full max-w-[1080px] items-center gap-10 md:grid-cols-[0.9fr_1.1fr]">
           <div className="relative min-h-[220px]">
             {steps.map((st, i) => (
-              <motion.div
+              <m.div
                 key={st.k}
                 className="absolute inset-0"
                 initial={false}
@@ -281,7 +281,7 @@ function DebtStory({ s }: { s: Story }) {
                 <p className={`text-[15px] font-semibold ${i === 2 ? 'text-teal-water' : 'text-[#9a5d12]'}`}>{st.k}</p>
                 <h2 className="mt-2 text-[36px] leading-[1.05] font-semibold md:text-[52px]">{st.t}</h2>
                 <p className="mt-4 max-w-[440px] text-[17px] leading-snug text-ink/70 md:text-[19px]">{st.b}</p>
-              </motion.div>
+              </m.div>
             ))}
           </div>
           <div className="rounded-[28px] bg-salt p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.35)] md:p-7">
@@ -294,8 +294,8 @@ function DebtStory({ s }: { s: Story }) {
               <text x={W * 0.36} y={y(target) - 12} textAnchor="middle" fontSize="13" fill="#c0362c" fontWeight="600">
                 palm salt limit {target.toFixed(1)} dS/m
               </text>
-              <motion.path d={path(habit)} fill="none" stroke="#e08a1e" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" style={{ pathLength: habitLen }} />
-              <motion.path d={path(namak)} fill="none" stroke="#0a6f69" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" style={{ pathLength: namakLen, opacity: namakOpacity }} />
+              <m.path d={path(habit)} fill="none" stroke="#e08a1e" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" style={{ pathLength: habitLen }} />
+              <m.path d={path(namak)} fill="none" stroke="#0a6f69" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" style={{ pathLength: namakLen, opacity: namakOpacity }} />
               {months.filter((_, i) => i % 2 === 0).map((m) => (
                 <text key={m.i} x={x(m.i)} y={H + 20} fontSize="12" fill="#6e6e73">
                   {m.m}
@@ -306,9 +306,9 @@ function DebtStory({ s }: { s: Story }) {
               <span className="flex items-center gap-2">
                 <span className="h-1 w-5 rounded-full bg-amber-warn" /> Habit
               </span>
-              <motion.span className="flex items-center gap-2" style={{ opacity: namakOpacity }}>
+              <m.span className="flex items-center gap-2" style={{ opacity: namakOpacity }}>
                 <span className="h-1 w-5 rounded-full bg-teal-water" /> Namak
-              </motion.span>
+              </m.span>
             </div>
           </div>
         </div>
@@ -356,7 +356,7 @@ function ValveSection() {
             </p>
           </Reveal>
         </div>
-        <motion.div style={{ y: phoneY, rotate: phoneRot }} className="mx-auto w-[300px] md:w-[330px]">
+        <m.div style={{ y: phoneY, rotate: phoneRot }} className="mx-auto w-[300px] md:w-[330px]">
           <div className="rounded-[48px] bg-[#2a2a2c] p-3 shadow-[0_40px_120px_-30px_rgba(95,211,198,0.45)] ring-1 ring-white/10">
             <div className="overflow-hidden rounded-[38px] bg-[#f2f2f7] text-ink">
               <div className="flex items-center justify-center pt-3 pb-2">
@@ -375,7 +375,7 @@ function ValveSection() {
                     <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">▶</span>
                     <div className="flex h-7 flex-1 items-center gap-[3px]">
                       {Array.from({ length: 22 }, (_, i) => (
-                        <motion.span
+                        <m.span
                           key={i}
                           className="w-[3px] rounded-full bg-white/80"
                           initial={{ height: '20%' }}
@@ -396,7 +396,7 @@ function ValveSection() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       </div>
     </section>
   )
@@ -453,7 +453,7 @@ function Results({ s }: { s: Story }) {
 function Final({ from, to }: { from: string; to: string }) {
   return (
     <section data-tone="dark" className="relative overflow-hidden bg-night px-6 py-32 text-center md:py-44">
-      <div aria-hidden className="absolute inset-x-0 -bottom-40 mx-auto h-80 w-[80%] rounded-full bg-[radial-gradient(ellipse,rgba(95,211,198,0.28),transparent_70%)] blur-2xl" />
+      <div aria-hidden className="absolute inset-x-0 -bottom-40 mx-auto h-80 w-[80%] rounded-full bg-[radial-gradient(ellipse,rgba(95,211,198,0.28),transparent_70%)]" />
       <Reveal className="relative">
         <h2 className="text-[44px] leading-[1.02] font-semibold md:text-[80px]">
           Pay the salt debt.
@@ -461,14 +461,14 @@ function Final({ from, to }: { from: string; to: string }) {
           <span className="text-white/55">Not the water bill.</span>
         </h2>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <motion.button
+          <m.button
             onClick={openFarm}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
             className="min-h-12 rounded-full bg-white px-7 text-[17px] font-semibold text-ink shadow-[0_10px_40px_-10px_rgba(95,211,198,0.7)]"
           >
             Open the demo farm
-          </motion.button>
+          </m.button>
           <a href="#why" onClick={markToured} className="min-h-12 rounded-full px-5 py-3 text-[17px] font-semibold text-glow-water">
             Why it works ›
           </a>

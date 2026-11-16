@@ -15,7 +15,7 @@ export default function Backdrop({ tone = 'light' }: { tone?: 'light' | 'dark' }
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const fine = window.matchMedia('(pointer: fine)').matches
+    const fine = window.matchMedia('(pointer: fine)').matches && window.innerWidth >= 1024
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (!fine || reduce) return
     let x = window.innerWidth / 2
@@ -29,15 +29,15 @@ export default function Backdrop({ tone = 'light' }: { tone?: 'light' | 'dark' }
       if (!raf) raf = requestAnimationFrame(tick)
     }
     const tick = () => {
-      // ease towards the pointer so the glow trails slightly
-      cx += (x - cx) * 0.18
-      cy += (y - cy) * 0.18
-      el.style.setProperty('--mx', `${cx.toFixed(1)}px`)
-      el.style.setProperty('--my', `${cy.toFixed(1)}px`)
-      raf = Math.abs(x - cx) + Math.abs(y - cy) > 0.5 ? requestAnimationFrame(tick) : 0
+      // ease towards the pointer so the glow trails slightly; only two small layers move (transform)
+      cx += (x - cx) * 0.2
+      cy += (y - cy) * 0.2
+      el.style.setProperty('--mx', `${Math.round(cx)}px`)
+      el.style.setProperty('--my', `${Math.round(cy)}px`)
+      raf = Math.abs(x - cx) + Math.abs(y - cy) > 1 ? requestAnimationFrame(tick) : 0
     }
     window.addEventListener('pointermove', onMove, { passive: true })
-    el.style.setProperty('--spot', '1')
+    el.dataset.spot = 'on'
     return () => {
       window.removeEventListener('pointermove', onMove)
       cancelAnimationFrame(raf)

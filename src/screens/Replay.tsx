@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, Eyebrow, SourceTag } from '../components/ui'
 import { IconPause, IconPlay } from '../components/icons'
 import { CROPS } from '../engine/crops'
@@ -57,6 +56,7 @@ export default function Replay() {
   const n = result?.rows.length ?? 0
   const [idx, setIdx] = useState(0)
   const [playing, setPlaying] = useState(false)
+  const [hover, setHover] = useState<number | null>(null)
   useDemoEvent('play-replay', () => {
     setIdx(0)
     setPlaying(false)
@@ -104,8 +104,7 @@ export default function Replay() {
   const savedM3 = (result.th.litres - result.tn.litres) / 1000
   const done = idx >= n
 
-  // Pad the visible series to full length so axes stay fixed while it animates.
-  const data = full.map((r, i) => (i < shown.length ? r : { date: r.date }))
+  const hoverRow = hover !== null && hover < shown.length ? full[hover] : null
 
   return (
     <div className="space-y-5">
@@ -159,34 +158,44 @@ export default function Replay() {
           </button>
         </div>
 
-        <ChartTitle title="Water used so far" unit="cubic metres" habit={cur?.habitM3} namak={cur?.namakM3} fmt={(x) => int(x)} />
-        <div className="h-44">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="#e8e8ed" vertical={false} />
-              <XAxis dataKey="date" tickFormatter={monthTick} interval={Math.max(1, Math.floor(n / 6))} tick={{ fontSize: 10, fill: '#6e6e73' }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, Math.ceil(maxM3)]} tick={{ fontSize: 10, fill: '#6e6e73' }} axisLine={false} tickLine={false} width={40} tickFormatter={(x) => (x >= 1000 ? `${one(x / 1000).replace('.0', '')}k` : int(x))} />
-              <Tooltip content={<Tip unit="m³" a="habitM3" b="namakM3" />} />
-              <Line type="monotone" dataKey="habitM3" stroke={HABIT} strokeWidth={2.5} dot={false} isAnimationActive={false} name="Habit" />
-              <Line type="monotone" dataKey="namakM3" stroke={TEAL} strokeWidth={3} dot={false} isAnimationActive={false} name="Namak" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartTitle
+          title="Water used so far"
+          unit="cubic metres"
+          habit={(hoverRow ?? cur)?.habitM3}
+          namak={(hoverRow ?? cur)?.namakM3}
+          fmt={(x) => int(x)}
+          date={hoverRow?.date}
+        />
+        <Lines
+          rows={full}
+          shown={shown.length}
+          a="habitM3"
+          b="namakM3"
+          max={maxM3}
+          yFmt={(x) => (x >= 1000 ? `${one(x / 1000).replace('.0', '')}k` : int(x))}
+          hover={hover}
+          onHover={setHover}
+        />
 
-        <ChartTitle title="Salt in the soil — dashed line is the safe level" unit="dS/m" habit={cur?.habitECe} namak={cur?.namakECe} fmt={one} />
-        <div className="h-44">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="#e8e8ed" vertical={false} />
-              <XAxis dataKey="date" tickFormatter={monthTick} interval={Math.max(1, Math.floor(n / 6))} tick={{ fontSize: 10, fill: '#6e6e73' }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, Math.ceil(maxECe)]} tick={{ fontSize: 10, fill: '#6e6e73' }} axisLine={false} tickLine={false} width={40} />
-              <ReferenceLine y={result.target} stroke={LIMIT} strokeDasharray="5 4" label={{ value: `${crop.short} limit ${one(result.target)}`, position: 'insideBottomRight', fontSize: 10, fill: LIMIT }} />
-              <Tooltip content={<Tip unit="dS/m" a="habitECe" b="namakECe" />} />
-              <Line type="monotone" dataKey="habitECe" stroke={HABIT} strokeWidth={2.5} dot={false} isAnimationActive={false} name="Habit" />
-              <Line type="monotone" dataKey="namakECe" stroke={TEAL} strokeWidth={3} dot={false} isAnimationActive={false} name="Namak" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartTitle
+          title="Salt in the soil — dashed line is the safe level"
+          unit="dS/m"
+          habit={(hoverRow ?? cur)?.habitECe}
+          namak={(hoverRow ?? cur)?.namakECe}
+          fmt={one}
+          date={hoverRow?.date}
+        />
+        <Lines
+          rows={full}
+          shown={shown.length}
+          a="habitECe"
+          b="namakECe"
+          max={maxECe}
+          yFmt={(x) => String(Math.round(x))}
+          refLine={{ y: result.target, label: `${crop.short} safe level ${one(result.target)}` }}
+          hover={hover}
+          onHover={setHover}
+        />
         <div className="mt-2 flex items-center gap-4 text-xs font-semibold">
           <span className="flex items-center gap-1.5"><span className="h-1 w-5 rounded-full" style={{ background: HABIT }} /> Habit ({int(valve.habitMinutes ?? farm.habitMinutes)} min every day)</span>
           <span className="flex items-center gap-1.5"><span className="h-1 w-5 rounded-full" style={{ background: TEAL }} /> Namak</span>
@@ -226,30 +235,18 @@ export default function Replay() {
   )
 }
 
-function ChartTitle({ title, unit, habit, namak, fmt }: { title: string; unit: string; habit?: number; namak?: number; fmt: (x: number) => string }) {
+function ChartTitle({ title, unit, habit, namak, fmt, date }: { title: string; unit: string; habit?: number; namak?: number; fmt: (x: number) => string; date?: string }) {
   return (
     <div className="mt-4 mb-1 flex items-baseline justify-between gap-2">
       <p className="text-[13px] font-semibold text-ink/80">
         {title} <span className="font-normal text-ink/65">({unit})</span>
       </p>
-      <p className="tabular text-xs tabular">
+      <p className="shrink-0 text-xs tabular">
+        {date && <span className="mr-2 text-ink/65">{dayLabel(date)}</span>}
         <span style={{ color: HABIT }}>{habit !== undefined ? fmt(habit) : '–'}</span>
         <span className="text-ink/30"> / </span>
         <span style={{ color: TEAL }} className="font-semibold">{namak !== undefined ? fmt(namak) : '–'}</span>
       </p>
-    </div>
-  )
-}
-
-function Tip({ active, payload, unit, a, b }: { active?: boolean; payload?: { payload: Record<string, number | string> }[]; unit: string; a: string; b: string }) {
-  if (!active || !payload?.length) return null
-  const p = payload[0].payload
-  if (p[a] === undefined) return null
-  return (
-    <div className="rounded-xl bg-ink px-3 py-2 text-xs text-salt shadow-lg">
-      <p className="tabular text-[11px] text-salt/75">{dayLabel(String(p.date))}</p>
-      <p>Habit {one(Number(p[a]))} {unit}</p>
-      <p className="font-semibold">Namak {one(Number(p[b]))} {unit}</p>
     </div>
   )
 }
@@ -261,6 +258,89 @@ function Verdict({ big, label, sub, tone }: { big: string; label: string; sub: s
       <p className={`text-[34px] leading-none font-semibold tracking-[-0.03em] tabular md:text-[44px] ${c}`}>{big}</p>
       <p className="mt-1.5 text-xs font-semibold text-ink/70">{label}</p>
       <p className="mt-0.5 text-[11px] text-ink/65">{sub}</p>
+    </div>
+  )
+}
+
+/** Lightweight two-line chart (plain SVG): habit vs Namak, drawn up to `shown` points, with hover read-out. */
+function Lines({
+  rows,
+  shown,
+  a,
+  b,
+  max,
+  yFmt,
+  refLine,
+  hover,
+  onHover,
+}: {
+  rows: Row[]
+  shown: number
+  a: 'habitM3' | 'habitECe'
+  b: 'namakM3' | 'namakECe'
+  max: number
+  yFmt: (x: number) => string
+  refLine?: { y: number; label: string }
+  hover: number | null
+  onHover: (i: number | null) => void
+}) {
+  const n = rows.length
+  const x = (i: number) => (i / Math.max(1, n - 1)) * 1000
+  const y = (v: number) => 100 - (v / max) * 100
+  const path = (k: keyof Row) =>
+    rows
+      .slice(0, Math.max(1, shown))
+      .map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(r[k] as number).toFixed(2)}`)
+      .join('')
+  const ticks = [0, 0.5, 1].map((f) => f * max)
+  const months = rows.map((r, i) => ({ r, i })).filter(({ r }) => r.date.endsWith('-01'))
+  return (
+    <div className="flex gap-2">
+      <div className="relative h-44 w-9 shrink-0 text-right text-[11px] text-ink/65 tabular">
+        {ticks.map((t) => (
+          <span key={t} className="absolute right-0 -translate-y-1/2" style={{ top: `${y(t)}%` }}>
+            {yFmt(t)}
+          </span>
+        ))}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div
+          className="relative h-44 touch-pan-y"
+          onPointerMove={(e) => {
+            const r = e.currentTarget.getBoundingClientRect()
+            onHover(Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width) * (n - 1)))))
+          }}
+          onPointerLeave={() => onHover(null)}
+        >
+          <svg viewBox="0 0 1000 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+            {ticks.map((t) => (
+              <line key={t} x1={0} x2={1000} y1={y(t)} y2={y(t)} stroke="#e8e8ed" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+            ))}
+            {refLine && (
+              <line x1={0} x2={1000} y1={y(refLine.y)} y2={y(refLine.y)} stroke={LIMIT} strokeDasharray="5 4" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+            )}
+            <path d={path(a)} fill="none" stroke={HABIT} strokeWidth={2.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <path d={path(b)} fill="none" stroke={TEAL} strokeWidth={3} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          </svg>
+          {refLine && (
+            <span className="absolute right-0 -translate-y-full pb-0.5 text-[11px] font-semibold text-red-debt" style={{ top: `${y(refLine.y)}%` }}>
+              {refLine.label}
+            </span>
+          )}
+          {hover !== null && hover < shown && (
+            <div className="pointer-events-none absolute inset-y-0 w-px bg-ink/30" style={{ left: `${(hover / Math.max(1, n - 1)) * 100}%` }} />
+          )}
+        </div>
+        <div className="relative mt-1 h-4 text-[11px] text-ink/65">
+          {months
+            .filter((_, k) => k % 2 === 0)
+            .map(({ r, i }) => (
+              <span key={r.date} className="absolute -translate-x-1/2" style={{ left: `${(i / Math.max(1, n - 1)) * 100}%` }}>
+                {monthTick(r.date)}
+              </span>
+            ))}
+        </div>
+      </div>
     </div>
   )
 }
