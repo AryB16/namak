@@ -172,7 +172,7 @@ export default function Worker() {
           <div className="flex min-h-[420px] flex-col gap-3 bg-[#ece5d8] px-3 py-4" aria-live="polite">
             <p className="mx-auto rounded-lg bg-salt/80 px-2.5 py-1 text-[11px] text-ink/60">Tomorrow · {plan.days[0].date}</p>
             {step === 'idle' && !photo && (
-              <p className="mx-auto mt-16 max-w-[220px] text-center text-sm text-ink/55">Press “Send to worker” to make tomorrow’s voice note.</p>
+              <p className="mx-auto mt-16 max-w-[220px] text-center text-sm text-ink/65">Press “Send to worker” to make tomorrow’s voice note.</p>
             )}
             {instr && (
               <div className="ml-auto max-w-[88%] rounded-2xl rounded-tr-md bg-[#d4ece4] p-2.5 shadow-sm">
@@ -180,7 +180,7 @@ export default function Worker() {
                 <p dir={L.rtl ? 'rtl' : 'ltr'} lang={L.bcp47} className="mt-2 text-[14px] leading-relaxed text-ink">
                   {instr.text}
                 </p>
-                <p className="mt-1 text-right text-[10px] text-ink/50">
+                <p className="mt-1 text-right text-[10px] text-ink/65">
                   {sentAt} · {step === 'writing' ? `writing in ${L.name}…` : step === 'recording' ? `writing & recording in ${L.name} — about 20 s…` : labelFor(instr, voiceSrc)}
                 </p>
               </div>
@@ -255,7 +255,7 @@ export default function Worker() {
             <Button variant="ghost" className="mt-3 w-full" onClick={() => fileRef.current?.click()} disabled={reading === 'reading'}>
               <IconCamera className="h-4 w-4" /> Take or upload a photo
             </Button>
-            <p className="mt-2 text-[11px] text-ink/50">Sample photos are drawings made for this demo, not real pen photos.</p>
+            <p className="mt-2 text-[11px] text-ink/65">Sample photos are drawings made for this demo, not real pen photos.</p>
 
             {reading === 'reading' && <p className="mt-3 text-sm font-semibold text-teal-water">Reading the display…</p>}
             {read && (
@@ -265,7 +265,7 @@ export default function Worker() {
                   {read.unitAssumed && ' — unit not visible, assumed mS/cm'}.
                 </p>
                 <p className="mt-1 font-display text-2xl font-semibold text-teal-deep">
-                  Well water {one(read.ec)} dS/m <span className="font-sans text-sm font-semibold text-ink/55">(was {one(farm.wellEC)})</span>
+                  Well water {one(read.ec)} dS/m <span className="font-sans text-sm font-semibold text-ink/65">(was {one(farm.wellEC)})</span>
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button onClick={() => apply(read.ec, 'photo')}>Confirm & update plan</Button>
@@ -333,7 +333,7 @@ function DiffCard({ diff }: { diff: { before: FarmPlan; after: FarmPlan; from: n
         Well water {one(diff.from)} → {one(diff.to)} dS/m
       </p>
       <table className="mt-3 w-full text-left text-sm">
-        <thead className="text-[11px] text-ink/55">
+        <thead className="text-[11px] text-ink/65">
           <tr>
             <th className="py-1 font-semibold">Tomorrow</th>
             <th className="font-semibold">Minutes</th>
@@ -478,7 +478,7 @@ function VoiceNote({ url, source, busy, text, lang }: { url: string | null; sour
           />
         ))}
       </div>
-      <span className="w-9 text-right font-mono text-[10px] text-ink/55">{dur ? `0:${String(Math.round(dur)).padStart(2, '0')}` : busy ? '…' : '0:12'}</span>
+      <span className="w-9 text-right font-mono text-[10px] text-ink/65">{dur ? `0:${String(Math.round(dur)).padStart(2, '0')}` : busy ? '…' : '0:12'}</span>
     </div>
   )
 }

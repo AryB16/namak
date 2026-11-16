@@ -86,7 +86,7 @@ export function SaltGauge({
         <span className="absolute top-1 -translate-x-1/2 font-mono text-[10px] text-ink/70 transition-[left] duration-300" style={{ left: p(ece) }}>
           {one(ece)}
         </span>
-        {ece / max < 0.8 && <span className="absolute top-1 right-0 font-mono text-[10px] text-ink/40">dS/m</span>}
+        {ece / max < 0.8 && <span className="absolute top-1 right-0 font-mono text-[10px] text-ink/65">dS/m</span>}
       </div>
     </div>
   )
@@ -98,7 +98,7 @@ export function Stat({ value, label, sub, tone = 'ink' }: { value: ReactNode; la
     <div>
       <p className={`font-display text-3xl leading-none tabular ${tones[tone]}`}>{value}</p>
       <p className="mt-1.5 text-xs font-semibold text-ink/70">{label}</p>
-      {sub && <p className="mt-0.5 text-[11px] text-ink/50">{sub}</p>}
+      {sub && <p className="mt-0.5 text-[11px] text-ink/65">{sub}</p>}
     </div>
   )
 }

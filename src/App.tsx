@@ -82,7 +82,7 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-2xl px-4 pb-8">
-        <Suspense fallback={<p className="py-20 text-center text-ink/50">Loading…</p>}>
+        <Suspense fallback={<p className="py-20 text-center text-ink/65">Loading…</p>}>
           {route === 'tomorrow' && <Tomorrow />}
           {route === 'compare' && <Compare />}
           {route === 'replay' && <Replay />}
@@ -104,7 +104,7 @@ export default function App() {
                 <a
                   href={`#${id}`}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex min-h-[64px] flex-col items-center justify-center gap-1 px-1 text-center text-[11px] font-semibold leading-tight ${active ? 'text-teal-water' : 'text-ink/55'}`}
+                  className={`flex min-h-[64px] flex-col items-center justify-center gap-1 px-1 text-center text-[11px] font-semibold leading-tight ${active ? 'text-teal-water' : 'text-ink/65'}`}
                 >
                   <Icon className={`h-6 w-6 ${active ? 'stroke-[2.2]' : ''}`} />
                   {label}

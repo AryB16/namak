@@ -208,7 +208,7 @@ export function planValve(
   const { ec } = appliedWater(farm, crop)
   const start = rz0 ?? initialRootZone(farm, v, ec)
   const urgentWindow = opts.urgentWindow ?? 7
-  const headroom = opts.headroom ?? 0.95
+  const headroom = opts.headroom ?? 0.98
   // A repayment day applies at most (1 + maxRepayFactor) × the maintenance water, so the debt is spread over the
   // coolest days of the week instead of flooding one valve (FAO-29: timing "does not appear to be critical provided
   // crop tolerance is not exceeded for extended or critical periods").
@@ -360,14 +360,15 @@ const toHHMM = (min: number) => {
 }
 
 /**
- * Pre-dawn schedule: valves run one after another (one pump) and finish by sunrise, but never start before
- * `earliest`. Rationale (design choice, not an FAO number): water applied before sunrise is in the root zone
- * before the afternoon peak in demand, and evaporation and wind losses from wet surfaces are lowest at night.
+ * Night / pre-dawn schedule: valves run one after another (one pump) and finish by sunrise, but never start before
+ * `earliest` (midnight by default). Rationale (design choice, not an FAO number): water applied before sunrise is in
+ * the root zone before the afternoon peak in demand, and evaporation and wind losses from wet surfaces are lowest at
+ * night.
  */
 export function predawnSchedule(
   items: { valveId: string; minutes: number }[],
   sunrise = '06:15',
-  earliest = '03:00',
+  earliest = '00:00',
 ): ValveSchedule[] {
   const total = items.reduce((a, b) => a + Math.ceil(b.minutes), 0)
   let t = Math.max(toMin(earliest), toMin(sunrise) - total)

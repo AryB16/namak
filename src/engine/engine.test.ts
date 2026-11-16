@@ -252,7 +252,7 @@ describe('pre-dawn schedule', () => {
       { valveId: 'b', start: '05:30', end: '06:15', minutes: 45 },
     ])
   })
-  it('never starts before 03:00', () => {
-    expect(predawnSchedule([{ valveId: 'a', minutes: 300 }], '06:00')[0].start).toBe('03:00')
+  it('never starts before midnight', () => {
+    expect(predawnSchedule([{ valveId: 'a', minutes: 500 }], '06:00')[0].start).toBe('00:00')
   })
 })

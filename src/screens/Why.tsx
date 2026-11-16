@@ -79,7 +79,7 @@ export default function Why() {
         <h2 className="font-display text-xl font-semibold">Crop numbers</h2>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[440px] text-left text-[13px]">
-            <thead className="text-[11px] text-ink/55">
+            <thead className="text-[11px] text-ink/65">
               <tr>
                 <th className="py-1 font-semibold">Crop</th>
                 <th className="font-semibold">Kc ini/mid/end</th>
@@ -103,7 +103,7 @@ export default function Why() {
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-[11px] text-ink/50">
+        <p className="mt-2 text-[11px] text-ink/65">
           ECe in dS/m. Kc: FAO-56 Table 12. Salt limit and 90 %: FAO-29 Table 4. Slope: FAO-56 Table 23. Rhodes grass (common UAE
           fodder) is not in either salt table; Bermuda grass is used as the nearest listed fodder grass.
         </p>

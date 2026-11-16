@@ -34,20 +34,20 @@ export default function Tomorrow() {
           <h1 className="mt-3 font-display text-[44px] leading-[1] font-semibold tabular sm:text-6xl">{minutes(totalMin)}</h1>
           <p className="mt-2 text-[15px] text-salt/85">
             of water across {plan.valves.length} valves · {first?.start} → {last?.end}
-            {last && last.end <= (day0.sunrise ?? '06:15') ? `, done by sunrise (${day0.sunrise ?? '06:15'})` : ` · pre-dawn start, sunrise ${day0.sunrise ?? '06:15'}`}
+            {last && last.end <= (day0.sunrise ?? '06:15') ? `, done by sunrise (${day0.sunrise ?? '06:15'})` : ` · runs past sunrise (${day0.sunrise ?? '06:15'})`}
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl bg-salt/8 p-4 ring-1 ring-salt/15">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-salt/60">Worker's habit</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-salt/75">Worker's habit</p>
               <p className="mt-1 font-display text-2xl tabular">{minutes(habitMin)}</p>
-              <p className="text-xs text-salt/60">{litres(habitL)}</p>
+              <p className="text-xs text-salt/75">{litres(habitL)}</p>
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-salt/60">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-salt/75">
                 {saved >= 0 ? 'Namak saves' : 'Namak adds'}
               </p>
               <p className="mt-1 font-display text-2xl tabular text-[#9be3d6]">{litres(Math.abs(saved))}</p>
-              <p className="text-xs text-salt/60">
+              <p className="text-xs text-salt/75">
                 AED {int((Math.abs(saved) / 1000) * farm.waterCostAedM3)} {saved >= 0 ? 'saved' : 'extra'} tomorrow
               </p>
             </div>
@@ -64,8 +64,8 @@ export default function Tomorrow() {
             >
               <IconSend className="h-4 w-4" /> Send to worker
             </a>
-            <span className="font-mono text-[11px] text-salt/60">
-              {forecast?.label} · Illustrative farm & well EC
+            <span className="font-mono text-[11px] text-salt/75">
+              {forecast?.source === 'live' ? forecast.label : 'Cached forecast · Open-Meteo'} · Illustrative farm & well EC
             </span>
           </div>
         </div>
@@ -104,7 +104,7 @@ function ValveCard({ vp, slot }: { vp: ValvePlan; slot?: ValveSchedule }) {
           <p className="whitespace-nowrap rounded-xl bg-teal-water/8 px-3 py-2 font-mono text-sm font-medium text-teal-water">
             {slot?.start} → {slot?.end}
           </p>
-          <p className="mt-1.5 text-xs text-ink/55">{litres(d.litres)}</p>
+          <p className="mt-1.5 text-xs text-ink/65">{litres(d.litres)}</p>
         </div>
       </div>
       <p className="px-5 pt-3 text-[13px] leading-relaxed text-ink/75">
@@ -149,7 +149,7 @@ function WeekPlan({ valves }: { valves: ValvePlan[] }) {
       <div className="mt-4 -mx-1 overflow-x-auto">
         <table className="w-full min-w-[320px] border-separate border-spacing-x-1 text-center text-sm">
           <thead>
-            <tr className="text-[11px] text-ink/55">
+            <tr className="text-[11px] text-ink/65">
               <th className="text-left font-semibold">Day</th>
               {valves.map((v) => (
                 <th key={v.valve.id} className="font-semibold">
@@ -187,7 +187,7 @@ function WeekPlan({ valves }: { valves: ValvePlan[] }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-3 text-[11px] text-ink/50">Heat = reference evapotranspiration ET₀, mm/day (FAO-56 Penman-Monteith).</p>
+      <p className="mt-3 text-[11px] text-ink/65">Heat = reference evapotranspiration ET₀, mm/day (FAO-56 Penman-Monteith).</p>
     </Card>
   )
 }
@@ -216,7 +216,7 @@ function SkeletonTomorrow() {
           </Button>
         </Card>
       ) : (
-        <p className="text-center text-sm text-ink/50">Loading tomorrow’s forecast…</p>
+        <p className="text-center text-sm text-ink/65">Loading tomorrow’s forecast…</p>
       )}
     </div>
   )

@@ -137,7 +137,7 @@ export default function Replay() {
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="font-mono text-xs text-ink/55">{cur ? dayLabel(cur.date, 'long') : ''}</p>
+            <p className="font-mono text-xs text-ink/65">{cur ? dayLabel(cur.date, 'long') : ''}</p>
             <p className="text-sm font-semibold">{crop.name}{!crop.perennial && ' · one growing season'}</p>
           </div>
           <button
@@ -209,7 +209,7 @@ export default function Replay() {
           />
         )}
       </div>
-      <p className="text-[11px] leading-relaxed text-ink/50">
+      <p className="text-[11px] leading-relaxed text-ink/65">
         Both workers start from the same soil test ({one(valve.soilECe)} dS/m). Namak re-plans every day using the next 7 days of
         the recorded weather as its forecast (a perfect forecast — real forecasts are less accurate). Salt-limited yield from
         season-mean root-zone ECe (FAO-29 / FAO-56 Table 23). Namak scheduled {result.repayDays} salt-debt repayment days.
@@ -222,7 +222,7 @@ function ChartTitle({ title, unit, habit, namak, fmt }: { title: string; unit: s
   return (
     <div className="mt-4 mb-1 flex items-baseline justify-between gap-2">
       <p className="text-[13px] font-semibold text-ink/80">
-        {title} <span className="font-normal text-ink/50">({unit})</span>
+        {title} <span className="font-normal text-ink/65">({unit})</span>
       </p>
       <p className="font-mono text-xs tabular">
         <span style={{ color: HABIT }}>{habit !== undefined ? fmt(habit) : '–'}</span>
@@ -239,7 +239,7 @@ function Tip({ active, payload, unit, a, b }: { active?: boolean; payload?: { pa
   if (p[a] === undefined) return null
   return (
     <div className="rounded-xl bg-ink px-3 py-2 text-xs text-salt shadow-lg">
-      <p className="font-mono text-[10px] text-salt/60">{dayLabel(String(p.date))}</p>
+      <p className="font-mono text-[10px] text-salt/75">{dayLabel(String(p.date))}</p>
       <p>Habit {one(Number(p[a]))} {unit}</p>
       <p className="font-semibold">Namak {one(Number(p[b]))} {unit}</p>
     </div>
@@ -252,7 +252,7 @@ function Verdict({ big, label, sub, tone }: { big: string; label: string; sub: s
     <div className="rounded-3xl border border-sand-200 bg-salt p-4">
       <p className={`font-display text-[28px] leading-none font-semibold tabular ${c}`}>{big}</p>
       <p className="mt-1.5 text-xs font-semibold text-ink/70">{label}</p>
-      <p className="mt-0.5 text-[11px] text-ink/50">{sub}</p>
+      <p className="mt-0.5 text-[11px] text-ink/65">{sub}</p>
     </div>
   )
 }

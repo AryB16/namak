@@ -16,7 +16,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   return (
     <label className="block">
       <span className="text-sm font-semibold text-ink/80">{label}</span>
-      {hint && <span className="block text-[11px] text-ink/50">{hint}</span>}
+      {hint && <span className="block text-[11px] text-ink/65">{hint}</span>}
       <div className="mt-1.5">{children}</div>
     </label>
   )
@@ -142,7 +142,7 @@ export default function Setup() {
                 aria-label="Valve name"
                 onChange={(e) => setValve(v.id, { name: e.target.value })}
               />
-              <span className="font-mono text-xs text-ink/55">{int(valveArea(v))} m²</span>
+              <span className="font-mono text-xs text-ink/65">{int(valveArea(v))} m²</span>
             </div>
             <Field label="Crop">
               <select className={inputCls} value={v.cropId} onChange={(e) => setValve(v.id, { cropId: e.target.value as CropId })}>

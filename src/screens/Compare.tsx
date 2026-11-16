@@ -77,7 +77,7 @@ export default function Compare() {
           </div>
           <p className="font-display text-4xl font-semibold text-teal-deep tabular">
             {one(wellEC)}
-            <span className="ml-1 font-sans text-sm font-semibold text-ink/55">dS/m</span>
+            <span className="ml-1 font-sans text-sm font-semibold text-ink/65">dS/m</span>
           </p>
         </div>
         <input
@@ -91,7 +91,7 @@ export default function Compare() {
           className="salt-slider mt-4 w-full"
           aria-valuetext={`${one(wellEC)} deciSiemens per metre`}
         />
-        <div className="mt-1 flex justify-between font-mono text-[10px] text-ink/45">
+        <div className="mt-1 flex justify-between font-mono text-[10px] text-ink/65">
           <span>0.5 fresh</span>
           <span>3.0</span>
           <span>8 very salty</span>
@@ -138,7 +138,7 @@ export default function Compare() {
               <ValveCompare key={v.valve.id} v={v} canBlend={canBlend} />
             ))}
           </div>
-          <p className="text-[11px] leading-relaxed text-ink/50">
+          <p className="text-[11px] leading-relaxed text-ink/65">
             Namak here = daily maintenance plan over the last 12 months of ERA5 weather (salt held at each crop’s limit by
             design). Habit = the worker’s fixed minutes, run through the FAO-61 salt model. Yield = salt-limited relative
             yield (FAO-29 / FAO-56 Table 23); water stress from under-watering is not counted, so habit losses are, if
@@ -156,10 +156,10 @@ function Counter({ value, unit, label, sub, tone }: { value: string; unit: strin
     <div className="rounded-2xl border border-sand-200 bg-salt p-3">
       <p className={`font-display text-[26px] leading-none font-semibold tabular ${t}`}>
         {value}
-        {unit && <span className="ml-0.5 font-sans text-xs font-semibold text-ink/50">{unit}</span>}
+        {unit && <span className="ml-0.5 font-sans text-xs font-semibold text-ink/65">{unit}</span>}
       </p>
       <p className="mt-1.5 text-[11px] leading-tight font-semibold text-ink/65">{label}</p>
-      {sub && <p className="text-[11px] text-ink/45">{sub}</p>}
+      {sub && <p className="text-[11px] text-ink/65">{sub}</p>}
     </div>
   )
 }
@@ -187,11 +187,11 @@ function ValveCompare({ v, canBlend }: { v: YearValve; canBlend: boolean }) {
         <p className="font-semibold">
           {v.valve.name} · {crop.name}
         </p>
-        <p className="font-mono text-xs text-ink/55">flush {pct(v.lf)} of water</p>
+        <p className="font-mono text-xs text-ink/65">flush {pct(v.lf)} of water</p>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink/65">
             Habit · salt peaks at {one(v.habitPeakECe)} · season yield {int(v.habitYield)}%
           </p>
           <SaltGauge ece={v.habitPeakECe} crop={crop} target={v.target} compact />
