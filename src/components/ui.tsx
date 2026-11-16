@@ -15,7 +15,7 @@ export function SourceTag({ children, tone = 'teal' }: { children: ReactNode; to
 }
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-[28px] bg-salt p-6 ${className}`}>{children}</section>
+  return <section className={`glass rounded-[28px] p-6 ${className}`}>{children}</section>
 }
 
 export function Eyebrow({ children }: { children: ReactNode }) {
@@ -38,7 +38,7 @@ export function SaltGauge({
   ece,
   crop,
   target,
-  label = 'Salt debt',
+  label = 'Salt in the soil',
   compact = false,
   dark = false,
 }: {
@@ -54,11 +54,7 @@ export function SaltGauge({
   const zone = debtZone(ece, crop, target)
   const delta = ece - target
   const text =
-    zone === 'ok'
-      ? `Paid up · ${one(-delta)} dS/m headroom`
-      : zone === 'debt'
-        ? `In debt · ${one(delta)} dS/m over the limit`
-        : `Yield falling · ${one(delta)} dS/m over`
+    zone === 'ok' ? 'Healthy — below the safe level' : zone === 'debt' ? 'A bit too salty — being washed out' : 'Too salty — crop is suffering'
   const color = dark
     ? zone === 'ok'
       ? 'text-glow-water'
@@ -69,12 +65,12 @@ export function SaltGauge({
         ? 'text-[#9a5d12]'
         : 'text-red-debt'
   return (
-    <div className="w-full" role="img" aria-label={`${label}: root-zone salinity ${one(ece)} dS/m, limit ${one(target)} dS/m. ${text}.`}>
+    <div className="w-full" role="img" aria-label={`${label}: ${one(ece)} dS/m, safe level ${one(target)} dS/m. ${text}.`}>
       {!compact && (
-        <div className="mb-2 flex items-baseline justify-between gap-2">
-          <span className={`text-[13px] font-medium ${dark ? 'text-white/70' : 'text-ink/70'}`}>{label}</span>
-          <span className={`text-[13px] font-semibold ${color}`}>{text}</span>
-        </div>
+        <p className="mb-2.5 text-[14px] leading-snug">
+          <span className={dark ? 'text-white/70' : 'text-ink/70'}>{label}: </span>
+          <span className={`font-semibold ${color}`}>{text}</span>
+        </p>
       )}
       <div className={`relative h-2 w-full rounded-full ${dark ? 'bg-white/10' : 'bg-sand-200'}`}>
         <div className="absolute inset-y-0 left-0 rounded-l-full bg-green-ok/80" style={{ width: `${pc(target)}%` }} />
@@ -86,12 +82,19 @@ export function SaltGauge({
           animate={{ left: `${pc(ece)}%` }}
           transition={{ duration: 0.9, ease: EASE }}
         >
-          <span className={`absolute top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular ${dark ? 'text-white/80' : 'text-ink/70'}`}>
-            {one(ece)}
-          </span>
+          {compact && (
+            <span className={`absolute top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular ${dark ? 'text-white/80' : 'text-ink/70'}`}>
+              {one(ece)}
+            </span>
+          )}
         </motion.div>
       </div>
-      <div className="h-6" />
+      <div className={compact ? 'h-6' : 'h-3'} />
+      {!compact && (
+        <p className={`text-[12px] ${dark ? 'text-white/60' : 'text-ink/65'}`}>
+          Now {one(ece)} · safe level {one(target)} dS/m · {delta > 0.01 ? `${one(delta)} over` : `${one(-delta)} to spare`}
+        </p>
+      )}
     </div>
   )
 }

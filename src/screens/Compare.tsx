@@ -1,5 +1,10 @@
+import { animate } from 'motion/react'
 import { useMemo, useState } from 'react'
+import { useDemoEvent } from '../demo/Demo'
 import { Button, Card, Eyebrow, SaltGauge, SourceTag } from '../components/ui'
+import { Term } from '../components/explain'
+import { EASE } from '../components/motion'
+import { motion } from 'motion/react'
 import { CROPS } from '../engine/crops'
 import { compareYear, type YearValve } from '../engine/farm'
 import { aed, int, one, pct } from '../lib/format'
@@ -8,14 +13,25 @@ import { useApp } from '../state'
 
 /** FAO-29 Table 1: ECw < 0.7 none, 0.7–3.0 slight to moderate, > 3.0 severe restriction on use. */
 function waterClass(ec: number) {
-  if (ec < 0.7) return { label: 'Fresh', tone: 'text-green-ok' }
-  if (ec <= 3.0) return { label: 'Brackish · slight–moderate', tone: 'text-[#9a5d12]' }
-  return { label: 'Brackish · severe', tone: 'text-red-debt' }
+  if (ec < 0.7) return { label: 'Fresh water — no salt problem', tone: 'text-green-ok' }
+  if (ec <= 3.0) return { label: 'Slightly salty — needs care', tone: 'text-[#9a5d12]' }
+  return { label: 'Very salty — needs a lot of washing', tone: 'text-red-debt' }
 }
+
+/** An Olympic pool is 50 m × 25 m × 2 m = 2,500 m³. */
+const POOL_M3 = 2500
 
 export default function Compare() {
   const { farm, setFarm, year, yearError } = useApp()
   const [wellEC, setWellEC] = useState(farm.wellEC)
+  // Guided demo: sweep the well salinity up and back so the counters and gauges visibly react.
+  useDemoEvent('sweep-slider', () => {
+    const base = farm.wellEC
+    const round = (v: number) => setWellEC(Math.round(v * 10) / 10)
+    animate(base, 6.5, { duration: 2.6, ease: [0.65, 0, 0.35, 1], onUpdate: round }).then(() =>
+      setTimeout(() => animate(6.5, base, { duration: 1.8, ease: [0.65, 0, 0.35, 1], onUpdate: round }), 1400),
+    )
+  })
   const [canBlend, setCanBlend] = useState(farm.canBlend)
   const preview = useMemo(() => ({ ...farm, wellEC, canBlend }), [farm, wellEC, canBlend])
   const cmp = useMemo(() => (year ? compareYear(preview, year.days) : null), [preview, year])
@@ -39,45 +55,50 @@ export default function Compare() {
   return (
     <div className="space-y-5">
       <div>
-        <Eyebrow>Habit vs Namak</Eyebrow>
+        <Eyebrow>The worker’s habit vs Namak</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">
-          Salt costs this farm <span className="text-red-debt tabular">{int(saltM3)} m³</span> of water a year.
+          Salty water costs this farm <span className="text-red-debt tabular">{int(saltM3 * 1000)} litres</span> a year.
         </h1>
-        <p className="mt-2 text-[15px] leading-relaxed text-ink/75">
-          That is the extra water needed to wash salt below the roots — the hidden water cost of a brackish well. Habit
-          doesn’t budget for it: it wastes water in winter and pays in summer with salty soil and lost yield.
+        <p className="mt-3 max-w-[760px] text-[16px] leading-relaxed text-ink/75">
+          Here is the problem in one line: the well water is salty, salt builds up in the soil, and the only fix is extra water to
+          wash it below the roots. Most farms just water the same amount every day and hope. Below, we compare that habit with
+          Namak’s plan over a full year of real weather.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <SourceTag>Historical weather · ERA5 via Open-Meteo</SourceTag>
-          <SourceTag tone="sand">Illustrative well EC</SourceTag>
+          <SourceTag>Real weather, last 12 months</SourceTag>
+          <SourceTag tone="sand">Example farm</SourceTag>
         </div>
       </div>
 
       {cmp && (
-        <div className="grid grid-cols-3 gap-2.5">
+        <div data-demo="counters" className="grid grid-cols-3 gap-2.5">
           <Counter
             value={`${int(savedM3)}`}
             unit="m³"
-            label={cmp.savedLitres >= 0 ? 'water saved / yr' : 'more water / yr'}
+            label={cmp.savedLitres >= 0 ? 'less water a year with Namak' : 'more water a year'}
+            sub={`≈ ${one(Math.abs(savedM3) / POOL_M3)} Olympic swimming pools`}
             tone={cmp.savedLitres >= 0 ? 'teal' : 'red'}
           />
-          <Counter value={aed(Math.abs(savedAed)).replace('AED ', '')} unit="AED" label={cmp.savedLitres >= 0 ? 'saved / yr' : 'extra / yr'} tone="teal" />
-          <Counter value={habitLossT >= 0.5 ? `−${int(habitLossT)}%` : '0%'} unit="" label="yield at risk with habit" tone={habitLoss > 0.5 ? 'red' : 'ink'} sub={`Namak ${namakLossT >= 0.5 ? `−${int(namakLossT)}%` : '0%'}`} />
+          <Counter value={aed(Math.abs(savedAed)).replace('AED ', '')} unit="AED" label={cmp.savedLitres >= 0 ? 'saved on water a year' : 'extra a year'} tone="teal" />
+          <Counter value={habitLossT >= 0.5 ? `−${int(habitLossT)}%` : '0%'} unit="" label="crop lost to salt with the habit" tone={habitLoss > 0.5 ? 'red' : 'ink'} sub={`With Namak: ${namakLossT >= 0.5 ? `−${int(namakLossT)}%` : 'none'}`} />
         </div>
 
       )}
 
+      <div data-demo="slider">
       <Card className="md:p-8">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <label htmlFor="well-ec" className="text-sm font-semibold text-ink/80">
-              Well water salinity
+            <label htmlFor="well-ec" className="text-[17px] font-semibold text-ink">
+              How salty is the well? <span className="font-normal text-ink/65">Drag to try</span>
             </label>
-            <p className={`text-xs font-semibold ${wc.tone}`}>{wc.label} (FAO-29 Table 1)</p>
+            <p className={`text-[13px] font-semibold ${wc.tone}`}>{wc.label}</p>
           </div>
           <p className="text-[44px] leading-none font-semibold tracking-[-0.03em] text-ink tabular">
             {one(wellEC)}
-            <span className="ml-1 font-sans text-sm font-semibold text-ink/65">dS/m</span>
+            <span className="ml-1 font-sans text-sm font-semibold text-ink/65">
+              <Term k="dS/m" />
+            </span>
           </p>
         </div>
         <input
@@ -92,9 +113,9 @@ export default function Compare() {
           aria-valuetext={`${one(wellEC)} deciSiemens per metre`}
         />
         <div className="mt-1 flex justify-between tabular text-[11px] text-ink/65">
-          <span>0.5 fresh</span>
-          <span>3.0</span>
-          <span>8 very salty</span>
+          <span>Fresh</span>
+          <span>Salty</span>
+          <span>Very salty</span>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm font-semibold">
@@ -104,7 +125,7 @@ export default function Compare() {
               onChange={(e) => setCanBlend(e.target.checked)}
               className="h-5 w-5 accent-teal-water"
             />
-            Farm has RO / treated water to blend
+            The farm can mix in clean (desalinated) water
           </label>
           {(wellEC !== farm.wellEC || canBlend !== farm.canBlend) && (
             <Button variant="ghost" onClick={() => setFarm({ ...farm, wellEC, canBlend })}>
@@ -113,25 +134,28 @@ export default function Compare() {
           )}
         </div>
       </Card>
+      </div>
 
       {cmp && (
         <>
           <div className="grid grid-cols-2 gap-3">
             <SideCard
-              title="Habit"
-              subtitle="Same minutes, every day"
+              title="The usual habit"
+              subtitle="Same minutes every day, all year"
               litres={cmp.habitLitres}
               aedTotal={(cmp.habitLitres / 1000) * farm.waterCostAedM3}
               tone="sand"
             />
             <SideCard
               title="Namak"
-              subtitle="Heat + salt, day by day"
+              subtitle="Adjusted daily for heat and salt"
               litres={cmp.namakLitres}
               aedTotal={(cmp.namakLitres / 1000) * farm.waterCostAedM3}
               tone="teal"
             />
           </div>
+
+          <MonthlyChart monthly={cmp.monthly} />
 
           <div className="space-y-3">
             {cmp.valves.map((v) => (
@@ -153,7 +177,7 @@ export default function Compare() {
 function Counter({ value, unit, label, sub, tone }: { value: string; unit: string; label: string; sub?: string; tone: 'teal' | 'red' | 'ink' }) {
   const t = { teal: 'text-teal-water', red: 'text-red-debt', ink: 'text-ink' }[tone]
   return (
-    <div className="rounded-[24px] bg-salt p-4 md:p-6">
+    <div className="glass rounded-[24px] p-4 md:p-6">
       <p className={`text-[26px] leading-none font-semibold tracking-[-0.03em] tabular md:text-[40px] ${t}`}>
         {value}
         {unit && <span className="ml-0.5 font-sans text-xs font-semibold text-ink/65">{unit}</span>}
@@ -184,21 +208,21 @@ function ValveCompare({ v, canBlend }: { v: YearValve; canBlend: boolean }) {
   return (
     <Card className="p-4">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="font-semibold">
-          {v.valve.name} · {crop.name}
+        <p className="text-[17px] font-semibold">
+          {v.valve.name} · {crop.short === 'Fodder' ? 'Animal fodder grass' : crop.name}
         </p>
-        <p className="tabular text-xs text-ink/65">flush {pct(v.lf)} of water</p>
+        <p className="text-[13px] text-ink/65">{pct(v.lf)} of its water goes to washing salt</p>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
           <p className="mb-1.5 text-[12px] font-semibold text-ink/70">
-            Habit · salt peaks at {one(v.habitPeakECe)} · season yield {int(v.habitYield)}%
+            Usual habit: {v.habitPeakECe > v.target + 0.05 ? `soil gets too salty (up to ${one(v.habitPeakECe)}, safe is ${one(v.target)})` : 'soil stays safe'} · harvest {int(v.habitYield)}%
           </p>
           <SaltGauge ece={v.habitPeakECe} crop={crop} target={v.target} compact />
         </div>
         <div>
           <p className="mb-1.5 text-[12px] font-semibold text-teal-water">
-            Namak · {v.lfCapped ? 'flush capped' : 'held at the limit'} · season yield {int(v.namakYield)}%
+            Namak: {v.lfCapped ? 'well too salty to fully wash — needs clean water' : 'soil kept at the safe level all year'} · harvest {int(v.namakYield)}%
           </p>
           <SaltGauge ece={v.namakECe} crop={crop} target={v.target} compact />
         </div>
@@ -207,21 +231,71 @@ function ValveCompare({ v, canBlend }: { v: YearValve; canBlend: boolean }) {
         <p className="mt-2 rounded-2xl bg-amber-warn/12 px-3.5 py-2.5 text-[13px] leading-relaxed ring-1 ring-amber-warn/30">
           {canBlend ? (
             <>
-              Too salty for {crop.name.toLowerCase()} alone. Blend <strong>{pct(v.blend.cleanFraction)} RO water</strong> into
-              this line → {one(v.blend.blendEC)} dS/m, flush {pct(v.blend.lrWithBlend)}.
+              This well is too salty for {crop.name.toLowerCase()} on its own. Mixing in <strong>{pct(v.blend.cleanFraction)} clean water</strong>{' '}
+              fixes it.
             </>
           ) : (
             <>
-              Too salty for {crop.name.toLowerCase()}: flushing would need{' '}
-              {Number.isFinite(v.blend.lrWellOnly) ? pct(v.blend.lrWellOnly) : 'more than all'} of the water (FAO-29: above 25–30% is
-              not practical). Blend <strong>{pct(v.blend.cleanFraction)} RO water</strong>, or switch to a more tolerant crop.
+              Too salty for {crop.name.toLowerCase()}: washing the salt out would take far too much water. Mix in{' '}
+              <strong>{pct(v.blend.cleanFraction)} clean water</strong>, or grow a crop that copes with salt better.
             </>
           )}
         </p>
       )}
       {v.habitWaterMet < 0.97 && (
-        <p className="mt-2 text-[12px] text-ink/70">Habit also leaves this crop short: it meets {pct(v.habitWaterMet)} of the year’s crop water need.</p>
+        <p className="mt-2 text-[13px] text-ink/70">The habit also leaves this crop thirsty on hot days: it gives only {pct(v.habitWaterMet)} of what it needs over the year.</p>
       )}
+    </Card>
+  )
+}
+
+/** Month-by-month water: the habit's flat line vs Namak following the seasons. */
+function MonthlyChart({ monthly }: { monthly: { month: string; namakL: number; habitL: number }[] }) {
+  const max = Math.max(...monthly.map((m) => Math.max(m.namakL, m.habitL)), 1) * 1.08
+  const H = 180
+  const label = (m: string, i: number) => {
+    const name = new Date(m + '-15T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })
+    const dup = monthly.filter((x) => x.month.slice(5) === m.slice(5)).length > 1
+    return dup || i === 0 ? `${name} ’${m.slice(2, 4)}` : name
+  }
+  return (
+    <Card className="md:p-8">
+      <h2 className="text-[24px] font-semibold md:text-[28px]">Month by month</h2>
+      <p className="mt-1 max-w-[680px] text-[15px] text-ink/70">
+        The habit pours the same amount all year: too much in the cool winter, too little in the summer heat. Namak follows the
+        weather.
+      </p>
+      <div className="mt-6 flex items-end gap-1.5 sm:gap-3" style={{ height: H + 28 }} role="img" aria-label="Monthly water use, habit versus Namak">
+        {monthly.map((m, i) => (
+          <div key={m.month} className="flex h-full flex-1 flex-col items-center justify-end">
+            <div className="flex w-full items-end justify-center gap-[3px]">
+              <motion.div
+                className="w-1/2 max-w-[18px] rounded-t-[6px] bg-sand-300"
+                initial={{ height: 0 }}
+                whileInView={{ height: (m.habitL / max) * H }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, ease: EASE, delay: i * 0.04 }}
+              />
+              <motion.div
+                className="w-1/2 max-w-[18px] rounded-t-[6px] bg-teal-water"
+                initial={{ height: 0 }}
+                whileInView={{ height: (m.namakL / max) * H }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, ease: EASE, delay: 0.1 + i * 0.04 }}
+              />
+            </div>
+            <span className="mt-2 text-[11px] font-medium text-ink/65">{label(m.month, i)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex gap-5 text-[13px]">
+        <span className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-[4px] bg-sand-300" /> Usual habit
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-[4px] bg-teal-water" /> Namak
+        </span>
+      </div>
     </Card>
   )
 }

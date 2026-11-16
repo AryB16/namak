@@ -24,6 +24,14 @@ describe('compareYear (slider engine)', () => {
     expect(t.lfCapped).toBe(true)
     expect(t.namakYield).toBeLessThan(100)
   })
+  it('monthly totals add up to the yearly totals', () => {
+    const c = compareYear(DEMO_FARM, year)
+    const n = c.monthly.reduce((a, m) => a + m.namakL, 0)
+    const h = c.monthly.reduce((a, m) => a + m.habitL, 0)
+    expect(n).toBeCloseTo(c.namakLitres, 0)
+    expect(h).toBeCloseTo(c.habitLitres, 0)
+    expect(c.monthly.length).toBeGreaterThanOrEqual(12)
+  })
   it('fast enough for a slider (< 50 ms)', () => {
     const t0 = performance.now()
     for (let i = 0; i < 5; i++) compareYear({ ...DEMO_FARM, wellEC: 1 + i }, year)

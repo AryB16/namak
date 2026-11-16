@@ -95,6 +95,8 @@ export interface YearCompare {
   savedLitres: number
   savedAed: number
   days: number
+  /** Water per calendar month, whole farm: Namak vs habit (litres). */
+  monthly: { month: string; namakL: number; habitL: number }[]
 }
 
 /**
@@ -104,6 +106,8 @@ export interface YearCompare {
  */
 export function compareYear(farm: Farm, yearDays: WeatherDay[]): YearCompare {
   const days = yearDays.slice(-365)
+  const months = new Map<string, { namakL: number; habitL: number }>()
+  for (const d of days) if (!months.has(d.date.slice(0, 7))) months.set(d.date.slice(0, 7), { namakL: 0, habitL: 0 })
   const valves = farm.valves.map((v): YearValve => {
     const crop = cropOf(v)
     const { ec, blend } = appliedWater(farm, crop)
@@ -122,6 +126,7 @@ export function compareYear(farm: Farm, yearDays: WeatherDay[]): YearCompare {
       const e = kc * d.et0
       etcMm += e
       namakMm += e / ((1 - lf) * farm.efficiency)
+      months.get(d.date.slice(0, 7))!.namakL += (e / ((1 - lf) * farm.efficiency)) * area
     }
     // Habit, simulated with the salt model on well water.
     let rz = initialRootZone(farm, v, farm.wellEC)
@@ -143,6 +148,7 @@ export function compareYear(farm: Farm, yearDays: WeatherDay[]): YearCompare {
       peak = Math.max(peak, ece)
       sumECe += ece
       met += Math.min(e, habitMm * farm.efficiency)
+      months.get(d.date.slice(0, 7))!.habitL += habitL
       dem += e
       hn++
     }
@@ -178,6 +184,7 @@ export function compareYear(farm: Farm, yearDays: WeatherDay[]): YearCompare {
     savedLitres: habitLitres - namakLitres,
     savedAed: ((habitLitres - namakLitres) / 1000) * farm.waterCostAedM3,
     days: days.length,
+    monthly: [...months.entries()].map(([month, m]) => ({ month, ...m })),
   }
 }
 

@@ -6,6 +6,7 @@ import { CROPS } from '../engine/crops'
 import { replaySeason, totals, type ValveDay } from '../engine/plan'
 import { dayLabel, int, one } from '../lib/format'
 import { useApp } from '../state'
+import { useDemoEvent } from '../demo/Demo'
 
 const TEAL = '#0a6f69'
 const HABIT = '#e08a1e'
@@ -56,6 +57,11 @@ export default function Replay() {
   const n = result?.rows.length ?? 0
   const [idx, setIdx] = useState(0)
   const [playing, setPlaying] = useState(false)
+  useDemoEvent('play-replay', () => {
+    setIdx(0)
+    setPlaying(false)
+    requestAnimationFrame(() => setPlaying(true))
+  })
   const raf = useRef(0)
 
   // Autoplay once per valve when the screen opens.
@@ -104,16 +110,16 @@ export default function Replay() {
   return (
     <div className="space-y-5">
       <div>
-        <Eyebrow>Season replay · proof it beats the guess</Eyebrow>
+        <Eyebrow>Proof · does it really work?</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">
           Last year, replayed with real weather.
         </h1>
         <p className="mt-2 text-[15px] leading-relaxed text-ink/75">
-          Same farm, same well, same days. One worker follows habit; the other follows Namak, re-planning each day with the
-          coming week’s weather.
+          We took last year’s real weather for this farm and played it back, day by day, twice: once with the worker’s usual
+          habit, once with Namak’s plan. Press play and watch what happens to the water and to the salt in the soil.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <SourceTag>Historical weather · ERA5 via Open-Meteo</SourceTag>
+          <SourceTag>Real weather · ERA5 satellite-based record</SourceTag>
           <SourceTag tone="sand">
             {monthYear(full[0].date)} – {monthYear(full[full.length - 1].date)}
           </SourceTag>
@@ -127,13 +133,14 @@ export default function Replay() {
             role="tab"
             aria-selected={v.id === valve.id}
             onClick={() => setValveId(v.id)}
-            className={`min-h-11 rounded-full px-4 text-sm font-semibold transition-colors ${v.id === valve.id ? 'bg-ink text-white' : 'bg-salt text-ink hover:bg-white/60'}`}
+            className={`min-h-11 rounded-full px-4 text-sm font-semibold transition-colors ${v.id === valve.id ? 'bg-ink text-white' : 'glass text-ink hover:bg-white'}`}
           >
             {v.name} · {CROPS[v.cropId].short}
           </button>
         ))}
       </div>
 
+      <div data-demo="replay-chart">
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -152,7 +159,7 @@ export default function Replay() {
           </button>
         </div>
 
-        <ChartTitle title="Water used, cumulative" unit="m³" habit={cur?.habitM3} namak={cur?.namakM3} fmt={(x) => int(x)} />
+        <ChartTitle title="Water used so far" unit="cubic metres" habit={cur?.habitM3} namak={cur?.namakM3} fmt={(x) => int(x)} />
         <div className="h-44">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
@@ -166,7 +173,7 @@ export default function Replay() {
           </ResponsiveContainer>
         </div>
 
-        <ChartTitle title="Root-zone salt (Salt Debt)" unit="dS/m" habit={cur?.habitECe} namak={cur?.namakECe} fmt={one} />
+        <ChartTitle title="Salt in the soil — dashed line is the safe level" unit="dS/m" habit={cur?.habitECe} namak={cur?.namakECe} fmt={one} />
         <div className="h-44">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
@@ -185,6 +192,7 @@ export default function Replay() {
           <span className="flex items-center gap-1.5"><span className="h-1 w-5 rounded-full" style={{ background: TEAL }} /> Namak</span>
         </div>
       </Card>
+      </div>
 
       <div className={`grid grid-cols-2 gap-3 transition-opacity duration-500 ${done ? 'opacity-100' : 'opacity-40'}`} aria-live="polite">
         <Verdict
@@ -196,23 +204,23 @@ export default function Replay() {
         {result.tn.yieldPct - result.th.yieldPct >= 1 ? (
           <Verdict
             big={`${int(result.th.yieldPct)}% → ${int(result.tn.yieldPct)}%`}
-            label="season yield, habit → Namak"
+            label="harvest, usual habit → Namak"
             sub={`days over the salt limit: habit ${result.habitOver}, Namak ${result.namakOver}`}
             tone="red"
           />
         ) : (
           <Verdict
             big={`${result.habitOver} → ${result.namakOver}`}
-            label="days over the salt limit, habit → Namak"
+            label="days the soil was too salty, habit → Namak"
             sub={`season yield: habit ${int(result.th.yieldPct)}%, Namak ${int(result.tn.yieldPct)}%`}
             tone={result.habitOver > result.namakOver ? 'red' : 'teal'}
           />
         )}
       </div>
-      <p className="text-[11px] leading-relaxed text-ink/65">
-        Both workers start from the same soil test ({one(valve.soilECe)} dS/m). Namak re-plans every day using the next 7 days of
-        the recorded weather as its forecast (a perfect forecast — real forecasts are less accurate). Salt-limited yield from
-        season-mean root-zone ECe (FAO-29 / FAO-56 Table 23). Namak scheduled {result.repayDays} salt-debt repayment days.
+      <p className="text-[13px] leading-relaxed text-ink/65">
+        Both start from the same soil ({one(valve.soilECe)} dS/m). In the replay Namak knows the next week’s weather exactly; real
+        forecasts are a little less accurate. Harvest is estimated from soil salt using UN FAO crop data. Namak scheduled{' '}
+        {result.repayDays} salt wash days.
       </p>
     </div>
   )
@@ -249,7 +257,7 @@ function Tip({ active, payload, unit, a, b }: { active?: boolean; payload?: { pa
 function Verdict({ big, label, sub, tone }: { big: string; label: string; sub: string; tone: 'teal' | 'red' | 'amber' }) {
   const c = { teal: 'text-teal-water', red: 'text-red-debt', amber: 'text-[#9a5d12]' }[tone]
   return (
-    <div className="rounded-[28px] bg-salt p-6">
+    <div className="glass rounded-[28px] p-6">
       <p className={`text-[34px] leading-none font-semibold tracking-[-0.03em] tabular md:text-[44px] ${c}`}>{big}</p>
       <p className="mt-1.5 text-xs font-semibold text-ink/70">{label}</p>
       <p className="mt-0.5 text-[11px] text-ink/65">{sub}</p>

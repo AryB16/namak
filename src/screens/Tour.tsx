@@ -137,7 +137,7 @@ function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: EASE }}
         >
-          Namak · salt-aware irrigation
+          Namak · smarter watering for salty wells
         </motion.p>
         <h1 className="mt-4 text-[56px] leading-[1] font-semibold tracking-[-0.04em] md:text-[112px]">
           {words.map((w, i) => (
@@ -158,7 +158,7 @@ function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: EASE, delay: 0.35 }}
         >
-          Every litre leaves salt in the soil. Namak keeps the account — and tells the person at the valve what to do tomorrow.
+          Every litre of well water leaves a little salt in the soil. Namak works out how much water each crop really needs — and tells the farm worker, by voice.
         </motion.p>
       </motion.div>
       <motion.div
@@ -191,8 +191,8 @@ function HiddenCost({ saltM3, cropM3 }: { saltM3: number; cropM3: number }) {
             <span className="ml-2 text-[0.35em] tracking-tight text-ink/65">m³</span>
           </p>
           <p className="mx-auto mt-5 max-w-[620px] text-[19px] leading-snug text-ink/70 md:text-[22px]">
-            of water a year — just to wash salt below the roots, on one small farm near Al Ain. Growers guess this number. Namak
-            calculates it, every day.
+            of water a year (1 m³ = 1,000 litres) — just to wash salt away from the roots, on one small farm near Al Ain. Farmers guess
+            this number. Namak calculates it, every day.
           </p>
         </Reveal>
         <Reveal delay={0.15} className="mx-auto mt-16 max-w-[760px] text-left">
@@ -217,8 +217,8 @@ function HiddenCost({ saltM3, cropM3 }: { saltM3: number; cropM3: number }) {
             </motion.div>
           </div>
           <p className="mt-3 text-[13px] text-ink/65">
-            Water for a year on the demo farm: {Math.round(cropM3).toLocaleString('en-US')} m³ for the crops + {Math.round(saltM3).toLocaleString('en-US')} m³ to
-            flush salt. Illustrative farm · real ERA5 weather · FAO-29 leaching method.
+            A year of water on the example farm: {Math.round(cropM3).toLocaleString('en-US')} m³ for the plants to drink + {Math.round(saltM3).toLocaleString('en-US')} m³
+            just to wash salt away. Real weather · UN FAO method.
           </p>
         </Reveal>
       </div>

@@ -6,15 +6,18 @@ import { useApp } from './state'
 import { timeAgo } from './lib/format'
 import { hasToured } from './lib/tour'
 import Tomorrow from './screens/Tomorrow'
+import Backdrop from './components/Backdrop'
+import { useDemo } from './demo/Demo'
 
 const Tour = lazy(() => import('./screens/Tour'))
+const Welcome = lazy(() => import('./screens/Welcome'))
 const Compare = lazy(() => import('./screens/Compare'))
 const Replay = lazy(() => import('./screens/Replay'))
 const Worker = lazy(() => import('./screens/Worker'))
 const Setup = lazy(() => import('./screens/Setup'))
 const Why = lazy(() => import('./screens/Why'))
 
-type Route = 'tour' | 'tomorrow' | 'compare' | 'replay' | 'worker' | 'farm' | 'why'
+type Route = 'welcome' | 'tour' | 'tomorrow' | 'compare' | 'replay' | 'worker' | 'farm' | 'why'
 
 const TABS: { id: Route; label: string; short: string; Icon: ComponentType<{ className?: string }> }[] = [
   { id: 'tomorrow', label: 'Tomorrow', short: 'Tomorrow', Icon: IconTomorrow },
@@ -24,12 +27,12 @@ const TABS: { id: Route; label: string; short: string; Icon: ComponentType<{ cla
   { id: 'farm', label: 'Farm', short: 'Farm', Icon: IconFarm },
 ]
 
-const ROUTES: Route[] = ['tour', 'tomorrow', 'compare', 'replay', 'worker', 'farm', 'why']
+const ROUTES: Route[] = ['welcome', 'tour', 'tomorrow', 'compare', 'replay', 'worker', 'farm', 'why']
 function readRoute(): Route {
   const h = window.location.hash.replace('#', '') as Route
   if (ROUTES.includes(h)) return h
-  // First visit with no deep link: show the story once, then the dashboard.
-  return hasToured() ? 'tomorrow' : 'tour'
+  // First visit with no deep link: the welcome screen (demo or explore). Afterwards: the dashboard.
+  return hasToured() ? 'tomorrow' : 'welcome'
 }
 
 function StatusBanner() {
@@ -63,6 +66,7 @@ function Logo() {
 export default function App() {
   const [route, setRoute] = useState<Route>(readRoute)
   const { farm } = useApp()
+  const demo = useDemo()
 
   useEffect(() => {
     const on = () => {
@@ -73,6 +77,12 @@ export default function App() {
     return () => window.removeEventListener('hashchange', on)
   }, [])
 
+  if (route === 'welcome')
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-night" />}>
+        <Welcome />
+      </Suspense>
+    )
   if (route === 'tour')
     return (
       <Suspense fallback={<div className="min-h-dvh bg-night" />}>
@@ -82,6 +92,7 @@ export default function App() {
 
   return (
     <div className="min-h-dvh pb-[calc(84px+env(safe-area-inset-bottom))] md:pb-0">
+      <Backdrop />
       <StatusBanner />
       <header className="sticky top-0 z-30 border-b border-black/[0.08] bg-[rgba(251,251,253,0.72)] backdrop-blur-xl backdrop-saturate-[1.8]">
         <div className="mx-auto flex h-14 max-w-[1080px] items-center justify-between gap-4 px-4 md:px-6">
@@ -110,11 +121,14 @@ export default function App() {
             <a href="#why" className="inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-ink/70 md:hidden">
               Why it works
             </a>
-            <a href="#tour" className="group inline-flex min-h-11 items-center">
-              <span className="rounded-full bg-ink px-3.5 py-1.5 text-[12px] font-semibold text-white transition-transform group-hover:scale-[1.03]">
-                Tour
-              </span>
+            <a href="#tour" className="hidden min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-ink/70 hover:text-ink sm:inline-flex">
+              Story
             </a>
+            <button onClick={demo.running ? demo.stop : demo.start} className="group inline-flex min-h-11 items-center">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-[12px] font-semibold text-white transition-transform group-hover:scale-[1.03]">
+                {demo.running ? 'End demo' : '▶ Demo'}
+              </span>
+            </button>
           </div>
         </div>
       </header>

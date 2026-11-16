@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Card, Eyebrow, SourceTag } from '../components/ui'
+import { Term } from '../components/explain'
 import { IconCamera, IconPause, IconPlay, IconSend } from '../components/icons'
 import { CROPS } from '../engine/crops'
 import { planFarm, type FarmPlan } from '../engine/farm'
@@ -19,6 +20,7 @@ import {
   type VoiceSource,
 } from '../lib/worker'
 import { useApp } from '../state'
+import { useDemoEvent } from '../demo/Demo'
 import sampleVoice from '../data/sampleVoice.json'
 
 const SAMPLES = [
@@ -65,6 +67,21 @@ export default function Worker() {
   useEffect(() => {
     if (iplan && online) void prepareNote(iplan, lang, online)
   }, [iplan, lang, online])
+
+  // Guided demo: send the note, then read a sample photo and confirm it automatically.
+  const autoConfirm = useRef(false)
+  useDemoEvent('send-note', () => void send())
+  useDemoEvent('read-sample', () => {
+    autoConfirm.current = true
+    void analyse(SAMPLES[0].src)
+  })
+  useEffect(() => {
+    if (!read || !autoConfirm.current) return
+    autoConfirm.current = false
+    const t = setTimeout(() => apply(read.ec, 'photo'), 1600)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [read])
 
   if (!plan || !iplan) return <Card>Loading tomorrow’s plan…</Card>
   const L = LANGS.find((l) => l.id === lang)!
@@ -139,11 +156,11 @@ export default function Worker() {
   return (
     <div className="space-y-5">
       <div>
-        <Eyebrow>Worker · the person at the valve</Eyebrow>
+        <Eyebrow>The person who opens the taps</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">Tomorrow’s plan, as a voice note.</h1>
         <p className="mt-2 text-[15px] leading-relaxed text-ink/75">
-          The owner decides; the worker opens the valves. Namak sends the exact minutes in the worker’s language — no reading
-          needed — and the worker sends back a photo of a ~AED 100 EC pen dipped in the well.
+          On many small farms the owner makes the plan, but a hired worker opens the taps — often by habit, and often in another
+          language. Namak sends the worker tomorrow’s exact minutes as a voice note in their language. No reading needed.
         </p>
       </div>
 
@@ -154,7 +171,7 @@ export default function Worker() {
             role="radio"
             aria-checked={l.id === lang}
             onClick={() => setLang(l.id)}
-            className={`min-h-11 rounded-full px-4 text-sm font-semibold transition-colors ${l.id === lang ? 'bg-ink text-white' : 'bg-salt text-ink hover:bg-white/60'}`}
+            className={`min-h-11 rounded-full px-4 text-sm font-semibold transition-colors ${l.id === lang ? 'bg-ink text-white' : 'glass text-ink hover:bg-white'}`}
           >
             <span lang={l.bcp47}>{l.native}</span>
             {l.id !== 'en' && <span className="ml-1.5 text-[11px] opacity-70">{l.name}</span>}
@@ -167,6 +184,7 @@ export default function Worker() {
       </Button>
 
       <div className="grid gap-5 md:grid-cols-[340px_1fr] md:items-start">
+        <div data-demo="phone">
         <Phone>
           <ChatHeader />
           <div className="flex min-h-[440px] flex-col gap-3 px-3 py-4" aria-live="polite">
@@ -188,7 +206,7 @@ export default function Worker() {
             {photo && (
               <div className="mr-auto max-w-[78%] rounded-[20px] rounded-bl-md bg-white p-2 shadow-sm">
                 <img src={photo} alt="Photo of an EC pen display sent by the worker" className="max-h-52 w-full rounded-xl object-cover" />
-                <p className="mt-1.5 px-1 text-[13px] text-ink/80">EC pen, well water</p>
+                <p className="mt-1.5 px-1 text-[13px] text-ink/80">Salt meter in well water</p>
                 {reading === 'reading' && <p className="px-1 text-[11px] text-teal-water">Namak is reading the display…</p>}
                 {read && (
                   <p className="px-1 text-[12px] font-semibold text-teal-water">
@@ -204,28 +222,30 @@ export default function Worker() {
             )}
           </div>
         </Phone>
+        </div>
 
         <div className="space-y-4">
           <Card>
             <h2 className="text-[21px] font-semibold">1 · Send tomorrow’s plan</h2>
             <p className="mt-1 text-[13px] text-ink/65">
-              Two sentences in {L.name}, written by AI from the plan and checked number-by-number against it. If the AI is slow,
-              offline or changes a number, Namak uses its built-in template.
+              AI turns the plan into two short sentences in {L.name} and reads them out. Every number is checked against the plan
+              first — if anything is off, or there is no internet, Namak uses a ready-made message instead.
             </p>
             <Button className="mt-3 hidden w-full md:inline-flex" onClick={send} disabled={step === 'writing' || step === 'recording'}>
               <IconSend className="h-4 w-4" /> {step === 'ready' ? 'Send again' : 'Send to worker'}
             </Button>
             <div className="mt-3 flex flex-wrap gap-2">
-              <SourceTag>AI · Gemini (server-side)</SourceTag>
-              <SourceTag tone="sand">Fallback · template + phone voice</SourceTag>
+              <SourceTag>Written and spoken by AI (Google Gemini)</SourceTag>
+              <SourceTag tone="sand">Works without AI too</SourceTag>
             </div>
           </Card>
 
+          <div data-demo="ec">
           <Card>
-            <h2 className="text-[21px] font-semibold">2 · Worker sends an EC reading</h2>
+            <h2 className="text-[21px] font-semibold">2 · The worker checks how salty the well is</h2>
             <p className="mt-1 text-[13px] text-ink/65">
-              The pen goes in a cup of well water; the worker photographs the display. AI reads the number, you confirm, and the
-              plan recalculates. Try a sample photo:
+              Wells get saltier as they are pumped. Once a week the worker dips a cheap <Term k="salt meter">salt meter</Term> in a
+              cup of well water and sends a photo. AI reads the number, you confirm it, and the plan updates. Try a sample photo:
             </p>
             <div className="mt-3 grid grid-cols-3 gap-2">
               {SAMPLES.map((s) => (
@@ -255,7 +275,7 @@ export default function Worker() {
             <Button variant="ghost" className="mt-3 w-full" onClick={() => fileRef.current?.click()} disabled={reading === 'reading'}>
               <IconCamera className="h-4 w-4" /> Take or upload a photo
             </Button>
-            <p className="mt-2 text-[11px] text-ink/65">Sample photos are drawings made for this demo, not real pen photos.</p>
+            <p className="mt-2 text-[11px] text-ink/65">Sample photos are drawings made for this demo.</p>
 
             {reading === 'reading' && <p className="mt-3 text-sm font-semibold text-teal-water">Reading the display…</p>}
             {read && (
@@ -265,7 +285,7 @@ export default function Worker() {
                   {read.unitAssumed && ' — unit not visible, assumed mS/cm'}.
                 </p>
                 <p className="mt-1 text-[28px] font-semibold text-ink">
-                  Well water {one(read.ec)} dS/m <span className="font-sans text-sm font-semibold text-ink/65">(was {one(farm.wellEC)})</span>
+                  Well water: {one(read.ec)} <span className="font-sans text-sm font-semibold text-ink/65">dS/m · was {one(farm.wellEC)} · {read.ec > farm.wellEC ? 'saltier than before' : read.ec < farm.wellEC ? 'less salty than before' : 'no change'}</span>
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button onClick={() => apply(read.ec, 'photo')}>Confirm & update plan</Button>
@@ -279,6 +299,7 @@ export default function Worker() {
               <ManualEntry error={readError} value={manual} onChange={setManual} onApply={(n) => apply(n, 'manual')} />
             )}
           </Card>
+          </div>
 
           {diff && <DiffCard diff={diff} />}
         </div>
@@ -307,7 +328,7 @@ function ManualEntry({ error, value, onChange, onApply }: { error: string; value
     <div className="mt-4 rounded-2xl bg-amber-warn/10 p-4 ring-1 ring-amber-warn/30">
       {error && <p className="text-sm font-semibold text-[#8a5413]">{error}</p>}
       <label className="mt-2 block text-sm font-semibold">
-        Type the pen reading (mS/cm = dS/m)
+        Type the number shown on the salt meter
         <input
           inputMode="decimal"
           className="mt-1.5 min-h-11 w-full rounded-xl border border-sand-300 bg-white px-3 text-[15px]"
@@ -337,7 +358,7 @@ function DiffCard({ diff }: { diff: { before: FarmPlan; after: FarmPlan; from: n
           <tr>
             <th className="py-1 font-semibold">Tomorrow</th>
             <th className="font-semibold">Minutes</th>
-            <th className="font-semibold">Salt flush</th>
+            <th className="font-semibold">Extra for salt</th>
           </tr>
         </thead>
         <tbody className="tabular">

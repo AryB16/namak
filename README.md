@@ -35,8 +35,10 @@ Everyone asks *“how much water does the crop need?”* In the desert that is o
 
 ## What it does (6 screens, mobile-first, no login)
 
-First visit opens a short apple.com-style scrolling tour (the three problems, the salt debt building up as you scroll,
-the results), then the dashboard. Returning visitors land straight on the dashboard; the tour is one tap away.
+First visit opens a welcome screen with two choices: **Watch the demo (60 s)** — a guided walkthrough that drives the real
+app by itself with plain-English captions (the slider moves, the voice note plays, a meter photo is read and confirmed;
+the farm is restored afterwards) — or **Explore on my own**. A scrolling story (“Your well is salty.”) is one tap away.
+Every screen explains the idea from scratch in everyday words; the technical maths sits behind “How we worked this out”.
 
 
 | Screen | What you see |

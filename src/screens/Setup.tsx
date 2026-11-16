@@ -77,7 +77,7 @@ export default function Setup() {
         <Eyebrow>Farm setup · once</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">Your farm</h1>
         <p className="mt-2 text-[15px] text-ink/70">
-          The owner sets this up once. Everything is saved on this phone; no account needed.
+          The owner fills this in once. It is saved on this phone — no account needed. This is an example farm; change anything to see the plan update.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <SourceTag tone="sand">{isDemo ? 'Illustrative demo farm' : 'Your edits · saved on this device'}</SourceTag>
@@ -86,7 +86,7 @@ export default function Setup() {
 
       <Card className="space-y-4">
         <h2 className="text-[21px] font-semibold">Place & water</h2>
-        <Field label="Location" hint="Weather comes from Open-Meteo for this point.">
+        <Field label="Where is the farm?" hint="We fetch the weather forecast for this place.">
           <select
             className={inputCls}
             value={place?.name ?? 'custom'}
@@ -104,16 +104,16 @@ export default function Setup() {
           </select>
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Well EC (dS/m)" hint="= mS/cm on an EC pen">
+          <Field label="How salty is the well water? (dS/m)" hint="The number on a salt meter (EC pen)">
             <Num value={farm.wellEC} step={0.1} onChange={(n) => set({ wellEC: n })} />
           </Field>
-          <Field label="Water cost (AED/m³)">
+          <Field label="Cost of water (AED per 1,000 L)">
             <Num value={farm.waterCostAedM3} step={0.1} onChange={(n) => set({ waterCostAedM3: n })} />
           </Field>
-          <Field label="Blend EC (dS/m)" hint="RO or treated water">
+          <Field label="Saltiness of clean water (dS/m)" hint="Desalinated or treated water you can mix in">
             <Num value={farm.cleanEC} step={0.1} onChange={(n) => set({ cleanEC: n })} />
           </Field>
-          <Field label="Drip efficiency" hint="0.90 default (unverified)">
+          <Field label="Share of water reaching the roots" hint="0.90 = 90% (estimate)">
             <Num value={farm.efficiency} step={0.01} min={0.5} onChange={(n) => set({ efficiency: Math.min(1, n) })} />
           </Field>
         </div>
@@ -126,7 +126,7 @@ export default function Setup() {
           />
           We can blend in RO / treated water
         </label>
-        <Field label="Longest a valve may run (min/day)">
+        <Field label="Longest a valve may run (minutes a day)">
           <Num value={farm.maxValveMinutes} step={10} onChange={(n) => set({ maxValveMinutes: n })} />
         </Field>
       </Card>
@@ -157,16 +157,16 @@ export default function Setup() {
               <Field label="Plants">
                 <Num value={v.plants} onChange={(n) => setValve(v.id, { plants: n })} />
               </Field>
-              <Field label="Area per plant (m²)" hint="spacing">
+              <Field label="Space per plant (m²)">
                 <Num value={v.spacingM2} step={0.1} onChange={(n) => setValve(v.id, { spacingM2: n })} />
               </Field>
-              <Field label="Emitters on valve">
+              <Field label="Number of drippers on this valve">
                 <Num value={v.emitters} onChange={(n) => setValve(v.id, { emitters: n })} />
               </Field>
-              <Field label="Emitter flow (L/h)">
+              <Field label="Water per dripper (litres per hour)">
                 <Num value={v.emitterLph} step={0.5} onChange={(n) => setValve(v.id, { emitterLph: n })} />
               </Field>
-              <Field label="Soil salinity ECe" hint="last soil test, dS/m">
+              <Field label="Soil saltiness (dS/m)" hint="From the last soil test">
                 <Num value={v.soilECe} step={0.1} onChange={(n) => setValve(v.id, { soilECe: n })} />
               </Field>
               <Field label="Worker’s habit" hint="minutes every day">

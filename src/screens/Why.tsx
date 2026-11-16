@@ -33,28 +33,40 @@ export default function Why() {
     <div className="space-y-5">
       <div>
         <Eyebrow>Why it works</Eyebrow>
-        <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">
-          Three problems hiding inside “water the farm”.
-        </h1>
+        <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">Namak, explained simply.</h1>
+        <p className="mt-3 max-w-[720px] text-[16px] leading-relaxed text-ink/75">
+          Farms in the desert water their crops from wells. The trouble is that well water there is often salty. Here are the
+          three problems that causes — and what Namak does about each.
+        </p>
       </div>
 
-      <Card className="space-y-4">
-        <Problem n="1" title="Salt is the hidden water cost">
-          Desert wells are brackish. To stop salt building up, some water must drain below the roots and take the salt with
-          it — the <em>leaching requirement</em>. Growers guess it: too little and the soil slowly poisons the crop, too much
-          and scarce water is wasted. Namak calculates it every day.
+      <Card className="space-y-6">
+        <Problem n="1" title="Salty water quietly wastes water">
+          When you water with salty water, the plant drinks the water and leaves the salt behind in the soil. To keep the soil
+          healthy you have to pour a little extra, so it drains down and carries the salt away from the roots. Farmers guess how
+          much extra. Guess too little and the crop slowly suffers; too much and precious water is wasted. Namak works out the
+          right amount for every valve, every day.
         </Problem>
-        <Problem n="2" title="Salt Debt">
-          Every litre of brackish water leaves salt behind. Namak keeps a running balance of root-zone salt against each
-          crop’s limit and schedules the repayment — extra leaching — on the coolest days, when the crop is using least
-          water. FAO-29 supports this: leaching can be done “at each irrigation, each alternate irrigation or less
-          frequently”, and should be scheduled “at periods of low crop water use”.
+        <Problem n="2" title="Salt builds up like a debt">
+          Each day a little salt is left behind — like a debt that grows. Namak keeps track of it and “pays it back” by giving a
+          bit more water on the coolest days of the week, when plants drink least and the washing works best. The UN’s farming
+          agency (FAO) recommends exactly this timing.
         </Problem>
-        <Problem n="3" title="The decision-maker isn’t at the valve">
-          The owner decides; a hired worker opens the valves by habit and may not read English. Namak sends tomorrow’s exact
-          minutes as a voice note in the worker’s language, and the worker closes the loop with a photo of a cheap EC pen.
+        <Problem n="3" title="The person with the plan isn’t the person at the tap">
+          The farm owner decides, but a hired worker opens the taps — often by habit, and often in another language. Namak sends
+          the worker a voice note with tomorrow’s exact minutes in their own language, and the worker sends back a photo of a
+          cheap salt meter so the plan stays up to date.
         </Problem>
       </Card>
+
+      <div className="pt-4">
+        <p className="text-[13px] font-semibold text-teal-water">For the curious</p>
+        <h2 className="mt-1 text-[28px] font-semibold md:text-[34px]">The science behind it</h2>
+        <p className="mt-2 max-w-[720px] text-[15px] text-ink/70">
+          Everything Namak calculates comes from published UN FAO irrigation guides. Here are the formulas, the crop numbers and
+          what is real versus example data.
+        </p>
+      </div>
 
       <Card>
         <h2 className="text-[21px] font-semibold">The maths</h2>
