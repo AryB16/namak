@@ -57,7 +57,11 @@ export default function Compare() {
       <div>
         <Eyebrow>The worker’s habit vs Namak</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">
-          Salty water costs this farm <span className="text-red-debt tabular">{int(saltM3 * 1000)} litres</span> a year.
+          Salty water costs this farm{' '}
+          <span className="text-red-debt tabular">
+            {saltM3 >= 1000 ? `${one(saltM3 / 1000)} million litres` : `${int(saltM3 * 1000)} litres`}
+          </span>{' '}
+          a year.
         </h1>
         <p className="mt-3 max-w-[760px] text-[16px] leading-relaxed text-ink/75">
           Here is the problem in one line: the well water is salty, salt builds up in the soil, and the only fix is extra water to
