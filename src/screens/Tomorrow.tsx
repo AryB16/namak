@@ -97,7 +97,7 @@ function ValveCard({ vp, slot }: { vp: ValvePlan; slot?: ValveSchedule }) {
           </Eyebrow>
           <p className="mt-2 font-display text-[40px] leading-none font-semibold text-teal-deep tabular">
             {Math.round(d.minutes)}
-            <span className="ml-1.5 font-sans text-base font-semibold text-ink/60">min</span>
+            <span className="ml-1.5 font-sans text-base font-semibold text-ink/70">min</span>
           </p>
         </div>
         <div className="text-right">
@@ -142,7 +142,7 @@ function WeekPlan({ valves }: { valves: ValvePlan[] }) {
         <h2 className="font-display text-2xl font-semibold text-teal-deep">Next 7 days</h2>
         <SourceTag>Live forecast · Open-Meteo</SourceTag>
       </div>
-      <p className="mt-1 text-[13px] text-ink/60">
+      <p className="mt-1 text-[13px] text-ink/70">
         Minutes per valve. <span className="font-semibold text-[#9a5d12]">●</span> = salt-debt repayment, placed on the coolest
         days (lowest ET₀).
       </p>
@@ -179,7 +179,7 @@ function WeekPlan({ valves }: { valves: ValvePlan[] }) {
                     <div className="h-2 w-8 overflow-hidden rounded-full bg-sand-200">
                       <div className="h-full rounded-full bg-amber-warn" style={{ width: `${(d.et0 / maxEt0) * 100}%` }} />
                     </div>
-                    <span className="w-8 shrink-0 text-right font-mono text-[11px] text-ink/60">{one(d.et0)}</span>
+                    <span className="w-8 shrink-0 text-right font-mono text-[11px] text-ink/70">{one(d.et0)}</span>
                   </div>
                 </td>
               </tr>

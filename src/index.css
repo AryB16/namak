@@ -14,7 +14,7 @@
   --color-salt: #fffdf8;
   --color-amber-warn: #d98b2b;
   --color-red-debt: #b8432f;
-  --color-green-ok: #4d8b4a;
+  --color-green-ok: #3a7337;
 
   --font-display: "Fraunces Variable", "Fraunces", Georgia, serif;
   --font-sans: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
@@ -48,12 +48,12 @@ body {
 .salt-slider::-webkit-slider-runnable-track {
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #4d8b4a 0%, #4d8b4a 3%, #d98b2b 33%, #b8432f 100%);
+  background: linear-gradient(90deg, #3a7337 0%, #3a7337 3%, #d98b2b 33%, #b8432f 100%);
 }
 .salt-slider::-moz-range-track {
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #4d8b4a 0%, #4d8b4a 3%, #d98b2b 33%, #b8432f 100%);
+  background: linear-gradient(90deg, #3a7337 0%, #3a7337 3%, #d98b2b 33%, #b8432f 100%);
 }
 .salt-slider::-webkit-slider-thumb {
   -webkit-appearance: none;

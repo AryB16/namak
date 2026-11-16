@@ -68,7 +68,7 @@ export default function App() {
           <img src="/favicon.svg" alt="" width={36} height={36} className="rounded-xl" />
           <div className="leading-tight">
             <p className="font-display text-xl font-semibold text-teal-deep">Namak</p>
-            <p className="text-[11px] text-ink/60">
+            <p className="text-[11px] text-ink/70">
               {farm.name} · {farm.place}
             </p>
           </div>

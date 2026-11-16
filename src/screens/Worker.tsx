@@ -170,7 +170,7 @@ export default function Worker() {
         <Phone>
           <ChatHeader />
           <div className="flex min-h-[420px] flex-col gap-3 bg-[#ece5d8] px-3 py-4" aria-live="polite">
-            <p className="mx-auto rounded-lg bg-salt/80 px-2.5 py-1 text-[11px] text-ink/60">Tomorrow · {plan.days[0].date}</p>
+            <p className="mx-auto rounded-lg bg-salt/80 px-2.5 py-1 text-[11px] text-ink/70">Tomorrow · {plan.days[0].date}</p>
             {step === 'idle' && !photo && (
               <p className="mx-auto mt-16 max-w-[220px] text-center text-sm text-ink/65">Press “Send to worker” to make tomorrow’s voice note.</p>
             )}

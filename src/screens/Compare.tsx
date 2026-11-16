@@ -169,12 +169,12 @@ function SideCard({ title, subtitle, litres, aedTotal, tone }: { title: string; 
   return (
     <div className={`rounded-3xl p-4 ${tone === 'teal' ? 'bg-teal-deep text-salt' : 'bg-sand-200/70 text-ink'}`}>
       <p className="font-display text-xl font-semibold">{title}</p>
-      <p className={`text-xs ${tone === 'teal' ? 'text-salt/70' : 'text-ink/60'}`}>{subtitle}</p>
+      <p className={`text-xs ${tone === 'teal' ? 'text-salt/70' : 'text-ink/70'}`}>{subtitle}</p>
       <p className="mt-3 font-display text-3xl font-semibold tabular">
         {int(m3)}
         <span className="ml-1 font-sans text-xs font-semibold opacity-70">m³/yr</span>
       </p>
-      <p className={`text-xs ${tone === 'teal' ? 'text-salt/70' : 'text-ink/60'}`}>{aed(aedTotal)} of water</p>
+      <p className={`text-xs ${tone === 'teal' ? 'text-salt/70' : 'text-ink/70'}`}>{aed(aedTotal)} of water</p>
     </div>
   )
 }
@@ -220,7 +220,7 @@ function ValveCompare({ v, canBlend }: { v: YearValve; canBlend: boolean }) {
         </p>
       )}
       {v.habitWaterMet < 0.97 && (
-        <p className="mt-2 text-[12px] text-ink/60">Habit also leaves this crop short: it meets {pct(v.habitWaterMet)} of the year’s crop water need.</p>
+        <p className="mt-2 text-[12px] text-ink/70">Habit also leaves this crop short: it meets {pct(v.habitWaterMet)} of the year’s crop water need.</p>
       )}
     </Card>
   )
