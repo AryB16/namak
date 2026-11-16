@@ -3,12 +3,33 @@ import { DEMO_FARM } from './data/demoFarm'
 import { getForecast, getLastYear, peekForecast, peekLastYear, type WeatherResult } from './data/weather'
 import demoAssets from './data/demoAssets.json'
 import snapshotForecast from './data/snapshot-forecast.json'
+import snapshotEra5 from './data/snapshot-era5.json'
 import type { Farm, WeatherDay } from './engine/plan'
 
 const FARM_KEY = 'namak.farm.v1'
 
 /** The recorded forecast days the demo's saved AI messages were made for (tomorrow onward). */
 const DEMO_DAYS: WeatherDay[] = (snapshotForecast.days as WeatherDay[]).filter((d) => d.date >= demoAssets.demoDay).slice(0, 7)
+
+/**
+ * Recorded real data (default): the Open-Meteo forecast recorded on 16 Nov 2026 and the ERA5 weather year that ends on
+ * 10 Nov 2026. Every number on the site stays the same from day to day (judging, the video), and matches the saved
+ * Gemini messages. "Use live forecast" switches to live data.
+ */
+const RECORDED_FORECAST: WeatherResult = {
+  days: snapshotForecast.days as WeatherDay[],
+  source: 'snapshot',
+  fetchedAt: snapshotForecast.fetchedAt,
+  label: 'Recorded forecast · Open-Meteo',
+}
+const RECORDED_YEAR: WeatherResult = {
+  days: snapshotEra5.days as WeatherDay[],
+  source: 'snapshot',
+  fetchedAt: snapshotEra5.fetchedAt,
+  label: 'Historical weather · ERA5 via Open-Meteo',
+}
+const LIVE_KEY = 'namak.live.v1'
+const near = (a: number, b: number) => Math.abs(a - b) < 0.05
 
 function loadFarm(): Farm {
   try {
@@ -39,8 +60,11 @@ interface AppState {
   forecastError: string | null
   /** True while the live forecast is being fetched (a cached one may already be on screen). */
   forecastLoading: boolean
-  /** Guided demo: plan from the recorded demo-day forecast so it matches the saved AI voice messages. */
+  /** True when the plan uses the recorded demo-day forecast (default, and always during the guided demo). */
   demoDay: boolean
+  /** True when the user switched to live forecast + live weather history. */
+  liveData: boolean
+  setLiveData: (on: boolean) => void
   setDemoDay: (on: boolean) => void
   /** Plan days from tomorrow onward (up to 7). */
   planDays: WeatherDay[]
@@ -86,6 +110,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   })
   const [tick, setTick] = useState(0)
   const [demoDay, setDemoDay] = useState(false)
+  const [liveData, setLiveDataState] = useState(() => {
+    try {
+      return localStorage.getItem(LIVE_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+  const setLiveData = useCallback((on: boolean) => {
+    setLiveDataState(on)
+    try {
+      localStorage.setItem(LIVE_KEY, on ? '1' : '0')
+    } catch {
+      /* ignore */
+    }
+  }, [])
+  // Recorded data exists for the demo farm's location only; anywhere else always uses live data.
+  const recorded = !liveData && near(farm.lat, snapshotForecast.lat) && near(farm.lon, snapshotForecast.lon)
 
   const setFarm = useCallback((f: Farm) => {
     setFarmState(f)
@@ -131,6 +172,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // Recorded mode needs no network at all.
+    if (recorded) {
+      setForecastLoading(false)
+      return
+    }
     let alive = true
     setForecastError(null)
     setForecastLoading(true)
@@ -150,7 +196,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (idle) window.cancelIdleCallback(t)
       else clearTimeout(t)
     }
-  }, [farm.lat, farm.lon, tick, online])
+  }, [farm.lat, farm.lon, tick, online, recorded])
 
   const value = useMemo<AppState>(
     () => ({
@@ -158,20 +204,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setFarm,
       resetFarm,
       isDemo: farm === DEMO_FARM,
-      forecast,
-      forecastError,
-      forecastLoading,
-      planDays: demoDay ? DEMO_DAYS : planDaysFrom(forecast),
-      demoDay,
+      forecast: recorded ? RECORDED_FORECAST : forecast,
+      forecastError: recorded ? null : forecastError,
+      forecastLoading: recorded ? false : forecastLoading,
+      planDays: demoDay || recorded ? DEMO_DAYS : planDaysFrom(forecast),
+      demoDay: demoDay || recorded,
       setDemoDay,
-      year,
-      yearError,
+      liveData: !recorded,
+      setLiveData,
+      year: recorded ? RECORDED_YEAR : year,
+      yearError: recorded ? null : yearError,
       online,
       readings,
       addReading,
       refresh: () => setTick((t) => t + 1),
     }),
-    [farm, setFarm, resetFarm, forecast, forecastError, forecastLoading, demoDay, year, yearError, online, readings, addReading],
+    [farm, setFarm, resetFarm, forecast, forecastError, forecastLoading, demoDay, recorded, setLiveData, year, yearError, online, readings, addReading],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

@@ -14,7 +14,7 @@ import { useApp } from '../state'
 const VALVE_COLORS = ['#0a6f69', '#5fb8ad', '#7cc4ff', '#9b8cff', '#f2a65a']
 
 export default function Tomorrow() {
-  const { farm, planDays, forecast, online, demoDay } = useApp()
+  const { farm, planDays, forecast, online, demoDay, liveData, setLiveData } = useApp()
   const plan = useMemo(() => (planDays.length ? planFarm(farm, planDays) : null), [farm, planDays])
 
   if (!plan) return <SkeletonTomorrow />
@@ -39,8 +39,14 @@ export default function Tomorrow() {
           <h1 className="text-[40px] leading-[1.05] font-semibold md:text-[56px]">Tomorrow’s watering plan</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <SourceTag>{demoDay ? 'Demo day: recorded forecast' : live ? 'Live weather forecast' : 'Saved weather forecast'}</SourceTag>
+          <SourceTag>{demoDay ? `Real forecast, recorded on 16 Nov` : live ? 'Live weather forecast' : 'Saved weather forecast'}</SourceTag>
           <SourceTag tone="sand">Example farm</SourceTag>
+          <button
+            onClick={() => setLiveData(!liveData)}
+            className="inline-flex min-h-8 items-center rounded-full px-2.5 text-[12px] font-semibold text-teal-water underline decoration-teal-water/30 underline-offset-2 hover:decoration-teal-water"
+          >
+            {liveData ? 'Back to the recorded day' : 'Use today’s live forecast'}
+          </button>
         </div>
       </div>
 
@@ -120,7 +126,7 @@ export default function Tomorrow() {
       </div>
 
       <Reveal>
-        <WeekChart valves={plan.valves} weather={plan.days} live={live} />
+        <WeekChart valves={plan.valves} weather={plan.days} live={live} recorded={demoDay} />
       </Reveal>
     </div>
   )
@@ -208,7 +214,7 @@ function ValveCard({ vp, slot }: { vp: ValvePlan; slot?: ValveSchedule }) {
 }
 
 /** 7-day plan as a stacked bar chart (minutes per valve per day); salt-wash days glow amber. */
-function WeekChart({ valves, weather, live }: { valves: ValvePlan[]; weather: WeatherDay[]; live: boolean }) {
+function WeekChart({ valves, weather, live, recorded }: { valves: ValvePlan[]; weather: WeatherDay[]; live: boolean; recorded: boolean }) {
   const [hover, setHover] = useState<number | null>(null)
   const days = valves[0]?.days ?? []
   const totals = days.map((_, i) => valves.reduce((a, v) => a + v.days[i].minutes, 0))
@@ -225,7 +231,7 @@ function WeekChart({ valves, weather, live }: { valves: ValvePlan[]; weather: We
             built up.
           </p>
         </div>
-        <SourceTag>{live ? 'Weather forecast' : 'Saved weather forecast'}</SourceTag>
+        <SourceTag>{recorded ? 'Recorded forecast' : live ? 'Live weather forecast' : 'Saved weather forecast'}</SourceTag>
       </div>
 
       <div className="mt-6 flex items-end gap-2 sm:gap-4" style={{ height: H + 56 }} role="img" aria-label="Bar chart of watering minutes for the next seven days">

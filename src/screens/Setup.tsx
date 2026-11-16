@@ -43,7 +43,7 @@ function Num({ value, onChange, step = 1, min = 0 }: { value: number; onChange: 
 }
 
 export default function Setup() {
-  const { farm, setFarm, resetFarm, isDemo } = useApp()
+  const { farm, setFarm, resetFarm, isDemo, liveData, setLiveData } = useApp()
   const set = (patch: Partial<Farm>) => setFarm({ ...farm, ...patch })
   const setValve = (id: string, patch: Partial<Valve>) =>
     setFarm({ ...farm, valves: farm.valves.map((v) => (v.id === id ? { ...v, ...patch } : v)) })
@@ -83,6 +83,31 @@ export default function Setup() {
           <SourceTag tone="sand">{isDemo ? 'Illustrative demo farm' : 'Your edits · saved on this device'}</SourceTag>
         </div>
       </div>
+
+      <Card className="space-y-3">
+        <h2 className="text-[21px] font-semibold">Which weather to use</h2>
+        <p className="text-[14px] leading-relaxed text-ink/70">
+          By default the site uses real weather that was recorded for this demo: the forecast recorded on 16 Nov 2026 and the
+          weather for the year before it. That keeps every number the same from day to day. Switch to live to plan with
+          today’s forecast instead.
+        </p>
+        <div role="radiogroup" aria-label="Weather data" className="flex flex-wrap gap-2">
+          {[
+            { on: false, label: 'Recorded real weather (fixed)' },
+            { on: true, label: 'Today’s live forecast' },
+          ].map((o) => (
+            <button
+              key={o.label}
+              role="radio"
+              aria-checked={liveData === o.on}
+              onClick={() => setLiveData(o.on)}
+              className={`min-h-11 rounded-full px-4 text-[14px] font-semibold transition-colors ${liveData === o.on ? 'bg-ink text-white' : 'bg-black/[0.05] text-ink hover:bg-black/[0.08]'}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </Card>
 
       <Card className="space-y-4">
         <h2 className="text-[21px] font-semibold">Place & water</h2>

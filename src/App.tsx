@@ -36,7 +36,13 @@ function readRoute(): Route {
 }
 
 function StatusBanner() {
-  const { online, forecast, forecastError, forecastLoading } = useApp()
+  const { online, forecast, forecastError, forecastLoading, liveData } = useApp()
+  if (!liveData)
+    return online ? null : (
+      <div className="bg-amber-warn px-4 py-2 text-center text-[13px] font-semibold text-ink" role="status">
+        Offline — everything still works with the saved data
+      </div>
+    )
   // Don't flash a warning while a cached plan is shown and the live forecast is still on its way.
   if (online && forecastLoading) return null
   let msg: string | null = null

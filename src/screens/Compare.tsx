@@ -22,7 +22,7 @@ function waterClass(ec: number) {
 const POOL_M3 = 2500
 
 export default function Compare() {
-  const { farm, setFarm, year, yearError } = useApp()
+  const { farm, setFarm, year, yearError, liveData } = useApp()
   const [wellEC, setWellEC] = useState(farm.wellEC)
   // Guided demo: sweep the well salinity up and back so the counters and gauges visibly react.
   useDemoEvent('sweep-slider', () => {
@@ -70,7 +70,7 @@ export default function Compare() {
           of real weather.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <SourceTag>Real weather from the last 12 months</SourceTag>
+          <SourceTag>{liveData ? 'Real weather from the last 12 months' : 'Real weather: Nov 2025 – Nov 2026'}</SourceTag>
           <SourceTag tone="sand">Example farm</SourceTag>
         </div>
       </div>
