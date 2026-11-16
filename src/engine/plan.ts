@@ -2,7 +2,10 @@
  * The decision: how many minutes to open each valve, day by day, and when to repay the salt debt.
  *
  * Namak policy
- *  1. Maintenance: every day apply ETc / ((1 − LR) × efficiency) (FAO-29 eqs. 7 and 9) with the FAO-29 target ECe.
+ *  1. Maintenance: every day apply ETc / ((1 − LF) × efficiency) (FAO-29 eq. 7), where LF holds the root zone at the
+ *     FAO-29 target ECe at steady state under the four-layer concentration-factor method (FAO 1985b = FAO-29; the
+ *     same model as FAO-61 Annex 4 Table A4.1). FAO-29 eq. 9 (Rhoades) is its quick estimate and is shown in the UI
+ *     for comparison; using the layered value keeps the daily plan consistent with the salt-debt model.
  *  2. Salt Debt: track the root zone with the FAO-61 Annex 4 salt storage model (salt.ts).
  *  3. Repayment: when the root zone is (or is projected to be) above the target ECe, schedule one extra leaching
  *     irrigation on the lowest-ET0 day available. FAO-29 §2.4.2: "Leaching can be done at each irrigation, each
@@ -15,6 +18,7 @@
 import {
   CROPS,
   LR_PRACTICAL_MAX,
+  seasonLength,
   climateAdjustedKc,
   kcForDay,
   targetECe,
@@ -22,13 +26,20 @@ import {
   type CropId,
   type Stage,
 } from './crops'
-import { averageECe, quarterWfc, repaymentDepth, rootZoneFromECe, stepDay, type RootZone } from './salt'
 import {
-  blendAdvice,
+  averageECe,
+  leachingFractionForTarget,
+  maxECwForLF,
+  quarterWfc,
+  repaymentDepth,
+  rootZoneFromECe,
+  stepDay,
+  type RootZone,
+} from './salt'
+import {
   depthToLitres,
   etc as etcOf,
   grossDepth,
-  leachingRequirement,
   litresForMinutes,
   valveMinutes,
   yieldPercent,
@@ -133,8 +144,25 @@ export function kcFor(v: Valve, day: WeatherDay): { kc: number; stage: Stage } {
 /** Water the valve's crop is given: blended if the farm can and the well alone is beyond the practical LR. */
 export function appliedWater(farm: Farm, crop: Crop): { ec: number; blend: BlendAdvice } {
   const target = targetECe(crop, farm.wellEC)
-  const blend = blendAdvice(farm.wellEC, farm.cleanEC, target)
+  const blend = modelBlendAdvice(farm.wellEC, farm.cleanEC, target)
   return { ec: blend.needed && farm.canBlend ? blend.blendEC : farm.wellEC, blend }
+}
+
+/** Maintenance leaching fraction: FAO-29 concentration-factor method, consistent with the salt model. */
+export function maintenanceLF(ecw: number, target: number): number {
+  return leachingFractionForTarget(ecw, target)
+}
+
+/** Blend advice using the same steady-state model as the planner (LF above LR_PRACTICAL_MAX → blend). */
+export function modelBlendAdvice(ecWell: number, ecClean: number, target: number): BlendAdvice {
+  const lrWellOnly = maintenanceLF(ecWell, target)
+  const ecMax = maxECwForLF(target, LR_PRACTICAL_MAX)
+  if (lrWellOnly <= LR_PRACTICAL_MAX || ecWell <= ecMax) {
+    return { needed: false, cleanFraction: 0, blendEC: ecWell, lrWithBlend: lrWellOnly, lrWellOnly }
+  }
+  const x = ecWell - ecClean <= 0 ? 1 : Math.min(1, (ecWell - ecMax) / (ecWell - ecClean))
+  const blendEC = (1 - x) * ecWell + x * ecClean
+  return { needed: true, cleanFraction: x, blendEC, lrWithBlend: maintenanceLF(blendEC, target), lrWellOnly }
 }
 
 export function initialRootZone(farm: Farm, v: Valve, ecApplied: number): RootZone {
@@ -157,7 +185,7 @@ function demand(farm: Farm, v: Valve, day: WeatherDay, ec: number): DayDemand {
   const { kc, stage } = kcFor(v, day)
   const e = etcOf(kc, day.et0)
   const target = targetECe(crop, ec)
-  const lrRaw = leachingRequirement(ec, target)
+  const lrRaw = maintenanceLF(ec, target)
   const lrCapped = !(lrRaw <= LR_PRACTICAL_MAX)
   const lr = lrCapped ? LR_PRACTICAL_MAX : lrRaw
   const maintGross = grossDepth(e, lr, farm.efficiency)
@@ -174,13 +202,17 @@ export function planValve(
   v: Valve,
   days: WeatherDay[],
   rz0?: RootZone,
-  opts: { urgentWindow?: number; headroom?: number } = {},
+  opts: { urgentWindow?: number; headroom?: number; maxRepayFactor?: number } = {},
 ): { days: ValveDay[]; rzEnd: RootZone } {
   const crop = cropOf(v)
   const { ec } = appliedWater(farm, crop)
   const start = rz0 ?? initialRootZone(farm, v, ec)
-  const urgentWindow = opts.urgentWindow ?? 3
+  const urgentWindow = opts.urgentWindow ?? 7
   const headroom = opts.headroom ?? 0.95
+  // A repayment day applies at most (1 + maxRepayFactor) × the maintenance water, so the debt is spread over the
+  // coolest days of the week instead of flooding one valve (FAO-29: timing "does not appear to be critical provided
+  // crop tolerance is not exceeded for extended or critical periods").
+  const maxRepayFactor = opts.maxRepayFactor ?? 1
   const area = valveArea(v)
   const flow = v.emitters * v.emitterLph
   const maxGross = flow > 0 && area > 0 ? (litresForMinutes(farm.maxValveMinutes, v.emitters, v.emitterLph) / area) : Infinity
@@ -201,31 +233,42 @@ export function planValve(
   }
 
   // Repayment passes: when the daily valve cap limits one repayment, the rest spills onto the next-coolest day.
-  for (let pass = 0; pass < days.length; pass++) {
+  const target = dem[0]?.target ?? crop.ecThreshold
+  const startsInDebt = averageECe(start) > target + 0.01
+  const dayCap = (i: number) => Math.min(maxGross, dem[i].maintGross * (1 + maxRepayFactor))
+  const hasRoom = (i: number) => dem[i].maintGross + extra[i] < dayCap(i) - 0.01
+  // Done when the root zone is at or below target from some day onward and stays there to the end of the window.
+  const tol = 0.01 // dS/m
+  const settled = (out: { eceEnd: number }[]) => {
+    const f = startsInDebt ? out.findIndex((o) => o.eceEnd <= target + tol) : 0
+    return f >= 0 && out.slice(f).every((o) => o.eceEnd <= target + tol)
+  }
+
+  for (let pass = 0; pass < days.length * 2; pass++) {
     const { out } = simulate()
-    const target = dem[0]?.target ?? crop.ecThreshold
-    const already = out.length > 0 && out[0].eceStart > target
-    const breach = out.findIndex((o) => o.eceEnd > target)
-    if (breach < 0 && !already) break
+    if (settled(out)) break
+    // Candidate days: in debt now → the first `urgentWindow` days (whole window if those are full);
+    // otherwise any day up to the first projected breach.
+    const breach = out.findIndex((o) => o.eceEnd > target + tol)
     const urgentLast = Math.min(days.length - 1, urgentWindow - 1)
-    const hasRoom = (i: number) => dem[i].maintGross + extra[i] < maxGross - 0.01
-    // Prefer the urgent window; if every day in it is at capacity, look further ahead.
-    const windowFull = already && !Array.from({ length: urgentLast + 1 }, (_, i) => i).some(hasRoom)
-    const last = already ? (windowFull ? days.length - 1 : urgentLast) : Math.max(breach, 0)
+    let last = startsInDebt ? urgentLast : Math.max(breach, 0)
+    if (!Array.from({ length: last + 1 }, (_, i) => i).some(hasRoom)) last = days.length - 1
     let best = -1
     for (let i = 0; i <= last; i++) {
       if (!hasRoom(i)) continue
       if (best < 0 || days[i].et0 < days[best].et0) best = i
     }
     if (best < 0) break
-    const o = out[best]
     const baseIw = (dem[best].maintGross + extra[best]) * farm.efficiency
-    const need = repaymentDepth(o.rzBefore, baseIw, ec, dem[best].etc, dem[best].target * headroom)
-    if (need <= 0) break
-    const addGross = Number.isFinite(need) ? need / farm.efficiency : maxGross
-    const room = Math.max(0, maxGross - dem[best].maintGross - extra[best])
+    const need = repaymentDepth(out[best].rzBefore, baseIw, ec, dem[best].etc, target * headroom)
+    const room = Math.max(0, dayCap(best) - dem[best].maintGross - extra[best])
+    // If this day is already below target (debt sits later), top it up anyway: earlier leaching lowers later ECe.
+    const addGross = need > 0 && Number.isFinite(need) ? need / farm.efficiency : room
     const add = Math.min(addGross, room)
-    if (add <= 0.01) break
+    if (add <= 0.01) {
+      extra[best] = dayCap(best) - dem[best].maintGross // mark full so the next pass moves on
+      continue
+    }
     extra[best] += add
   }
 
@@ -364,11 +407,38 @@ export function totals(farm: Farm, v: Valve, days: ValveDay[]): SummaryTotals {
 }
 
 /**
+ * Days to replay for a valve: perennials get the last 12 months of the data; annual crops get their most recent
+ * complete-or-current season, re-planted on the same month-day as `plantingDate` in the year the data covers.
+ */
+export function replayWindow(v: Valve, days: WeatherDay[]): WeatherDay[] {
+  const crop = cropOf(v)
+  if (crop.perennial || !v.plantingDate || days.length === 0) return days.slice(-365)
+  const md = v.plantingDate.slice(5)
+  const last = days[days.length - 1].date
+  const len = seasonLength(crop)
+  for (let y = Number(last.slice(0, 4)); y >= Number(days[0].date.slice(0, 4)); y--) {
+    const start = `${y}-${md}`
+    if (start < days[0].date) continue
+    if (dayIndex(start) + len - 1 > dayIndex(last)) continue
+    return days.filter((d) => d.date >= start && dayIndex(d.date) < dayIndex(start) + len)
+  }
+  return days.slice(-len)
+}
+
+/** Planting date used for a replayed annual crop (first replayed day). */
+export function replayValve(v: Valve, days: WeatherDay[]): Valve {
+  const w = replayWindow(v, days)
+  return cropOf(v).perennial || !v.plantingDate || !w.length ? v : { ...v, plantingDate: w[0].date }
+}
+
+/**
  * Season replay: Namak re-plans every day with the next 7 days of (historical) weather as its forecast and applies
  * day 1; Habit runs its fixed minutes. Both start from the same root zone.
  */
-export function replaySeason(farm: Farm, v: Valve, days: WeatherDay[], horizon = 7) {
+export function replaySeason(farm: Farm, v: Valve, allDays: WeatherDay[], horizon = 7) {
   const crop = cropOf(v)
+  const days = replayWindow(v, allDays)
+  v = replayValve(v, allDays)
   const { ec } = appliedWater(farm, crop)
   let rz = initialRootZone(farm, v, ec)
   const namak: ValveDay[] = []

@@ -133,3 +133,43 @@ export function repaymentDepth(
   }
   return hi
 }
+
+/**
+ * Steady-state root-zone average ECe for a leaching fraction, using the same four-layer, 40-30-20-10 % uptake
+ * concept as FAO-29 (FAO 1985b) and FAO-61 Annex 4 Figure A4.2 / Table A4.1:
+ *   LF_k = 1 − (1 − LF)·(cumulative uptake to the bottom of quarter k),  ECsw_k = ECiw / LF_k,
+ *   ECe = (ECiw + ΣECsw_k) / 5 / 2.
+ */
+export function steadyStateECe(lf: number, ecIw: number): number {
+  let cum = 0
+  let sum = ecIw
+  for (const u of UPTAKE_PATTERN) {
+    cum += u
+    sum += ecIw / (1 - (1 - lf) * cum)
+  }
+  return sum / 10
+}
+
+/**
+ * Leaching fraction that holds the root-zone average ECe at `targetEce` at steady state (inverse of
+ * steadyStateECe, by bisection). This is the FAO-29 concentration-factor method; FAO-29 eq. 9 is its quick
+ * empirical estimate. Returns Infinity if even LF 0.95 cannot reach the target.
+ */
+export function leachingFractionForTarget(ecIw: number, targetEce: number): number {
+  if (ecIw <= 0) return 0
+  if (steadyStateECe(0.95, ecIw) > targetEce) return Infinity
+  let lo = 0.001
+  let hi = 0.95
+  if (steadyStateECe(lo, ecIw) <= targetEce) return lo
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2
+    if (steadyStateECe(mid, ecIw) > targetEce) lo = mid
+    else hi = mid
+  }
+  return hi
+}
+
+/** Largest water EC whose required leaching fraction stays at or below `lfMax` (steady-state, four-layer). */
+export function maxECwForLF(targetEce: number, lfMax: number): number {
+  return targetEce / steadyStateECe(lfMax, 1)
+}

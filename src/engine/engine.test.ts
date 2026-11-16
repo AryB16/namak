@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { CROPS, climateAdjustedKc, kcForDay, targetECe, windAt2m } from './crops'
-import { averageECe, quarterWfc, repaymentDepth, rootZoneFromECe, stepDay, totalSalt } from './salt'
+import {
+  averageECe,
+  leachingFractionForTarget,
+  maxECwForLF,
+  quarterWfc,
+  repaymentDepth,
+  rootZoneFromECe,
+  stepDay,
+  steadyStateECe,
+  totalSalt,
+} from './salt'
 import {
   blendAdvice,
   etc,
@@ -91,6 +101,33 @@ describe('FAO-61 Annex 4 salt storage model', () => {
     expect(Math.abs(runToEquilibrium(lf) - x)).toBeLessThan(0.08)
   })
 
+  it.each([
+    [0.05, 3.2],
+    [0.1, 2.1],
+    [0.15, 1.6],
+    [0.2, 1.3],
+    [0.25, 1.2],
+    [0.3, 1.0],
+    [0.5, 0.8],
+  ])('closed-form steady state at LF %s → Table A4.1 X = %s', (lf, x) => {
+    expect(Math.abs(steadyStateECe(lf, 1) - x)).toBeLessThan(0.06)
+  })
+
+  it('LF for target inverts the steady state', () => {
+    const lf = leachingFractionForTarget(3.2, 4)
+    expect(steadyStateECe(lf, 3.2)).toBeCloseTo(4, 6)
+    expect(lf).toBeGreaterThan(leachingRequirement(3.2, 4)) // layered method asks a little more than eq. 9 here
+  })
+
+  it('dynamic model settles at the closed-form steady state', () => {
+    const lf = leachingFractionForTarget(3.2, 4)
+    let rz = rootZoneFromECe(5, 3.2, quarterWfc(1.5, 0.12))
+    for (let i = 0; i < 3000; i++) rz = stepDay(rz, 6 / (1 - lf), 3.2, 6).rz
+    expect(averageECe(rz)).toBeCloseTo(4, 2)
+  })
+
+  it('max water EC for LF 0.25 = target / 1.2', () => expect(maxECwForLF(2.5, 0.25)).toBeCloseTo(2.5 / steadyStateECe(0.25, 1), 10))
+
   it('conserves salt: ΔS = in − out', () => {
     const w = quarterWfc(0.7, 0.12)
     const rz = rootZoneFromECe(3, 2, w)
@@ -149,22 +186,24 @@ const week = (et0s: number[]): WeatherDay[] =>
 
 describe('planner', () => {
   it('maintenance minutes match the hand calculation', () => {
-    // date palm, ET0 5 → ETc 4.75 mm; LR = 3.8/(20 − 3.8) = 0.2346; gross = 4.75/(0.7654 × 0.9) = 6.896 mm
-    // area 40 × 64 = 2560 m² → 17 652 L; flow 160 × 8 = 1280 L/h → 827 min, capped at 240.
-    const p = planValve(farm, { ...palms, soilECe: 3.0 }, week([5]))
+    // date palm, ET0 5 → ETc 4.75 mm; LF from the layered method at target 4.0; gross = 4.75 / ((1 − LF) × 0.9)
+    const f = { ...farm, wellEC: 3.2, canBlend: false }
+    const p = planValve(f, { ...palms, soilECe: 3.0 }, week([5]))
     const d = p.days[0]
-    expect(d.lr).toBeCloseTo(3.8 / 16.2, 6)
-    expect(d.maintenanceMm).toBeCloseTo(4.75 / ((1 - 3.8 / 16.2) * 0.9), 6)
+    const lf = leachingFractionForTarget(3.2, 4)
+    expect(lf).toBeLessThan(0.25)
+    expect(d.lr).toBeCloseTo(lf, 6)
+    expect(d.maintenanceMm).toBeCloseTo(4.75 / ((1 - lf) * 0.9), 6)
   })
 
   it('schedules debt repayment on the coolest day in the urgent window', () => {
-    // Big valve so capacity is not the limit: the whole repayment lands on the coolest early day.
+    // Big valve so valve capacity is not the limit; the first repayment goes on the coolest day.
     const v = { ...palms, plants: 10, soilECe: 4.3 }
     const p = planValve({ ...farm, maxValveMinutes: 1440 }, v, week([7, 4, 6, 8, 8, 8, 8]))
-    const rep = p.days.filter((d) => d.isRepaymentDay).map((d) => d.date)
-    expect(rep[0]).toBe('2026-11-18') // ET0 4 is the lowest of the first three days
+    expect(p.days.find((d) => d.date === '2026-11-18')!.isRepaymentDay).toBe(true) // ET0 4: coolest day
     const after = p.days.find((d) => d.date === '2026-11-18')!
-    expect(after.eceEnd).toBeLessThan(after.target) // debt repaid that day (to ~0.95 × target, capacity allowing)
+    expect(after.eceEnd).toBeLessThan(after.eceStart) // debt paid down that day (capped at 2 × maintenance water)
+    expect(p.days[p.days.length - 1].eceEnd).toBeLessThanOrEqual(after.target + 0.01) // repaid within the week
   })
 
   it('no repayment when the soil is below target and stays there', () => {
