@@ -142,10 +142,10 @@ function ValveCard({ vp, slot }: { vp: ValvePlan; slot?: ValveSchedule }) {
         </div>
         <p className="mt-4 text-[56px] leading-none font-semibold tracking-[-0.04em] text-teal-water tabular">
           <CountUp value={d.minutes} />
-          <span className="ml-1.5 text-[17px] font-semibold tracking-normal text-ink/60">min</span>
+          <span className="ml-1.5 text-[17px] font-semibold tracking-normal text-ink/65">min</span>
         </p>
         <p className="mt-2 text-[15px] font-medium tabular text-ink/80">
-          {slot?.start} → {slot?.end} <span className="text-ink/60">· {litres(d.litres)}</span>
+          {slot?.start} → {slot?.end} <span className="text-ink/65">· {litres(d.litres)}</span>
         </p>
         <p className="mt-4 text-[14px] leading-relaxed text-ink/70">
           Crop needs {one(d.etc)} mm (heat ET₀ {one(d.et0)} × Kc {d.kc.toFixed(2)}), plus {pct(flushPct)} to flush salt from{' '}
@@ -183,7 +183,7 @@ function WeekPlan({ valves, live }: { valves: ValvePlan[]; live: boolean }) {
       <div className="mt-6 -mx-2 overflow-x-auto">
         <table className="w-full min-w-[340px] text-center text-[15px]">
           <thead>
-            <tr className="text-[12px] text-ink/60">
+            <tr className="text-[12px] text-ink/65">
               <th className="px-2 py-2 text-left font-medium">Day</th>
               {valves.map((v) => (
                 <th key={v.valve.id} className="px-2 py-2 font-medium">
@@ -230,7 +230,7 @@ function WeekPlan({ valves, live }: { valves: ValvePlan[]; live: boolean }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-3 text-[12px] text-ink/60">Heat = reference evapotranspiration ET₀, mm/day (FAO-56 Penman-Monteith).</p>
+      <p className="mt-3 text-[12px] text-ink/65">Heat = reference evapotranspiration ET₀, mm/day (FAO-56 Penman-Monteith).</p>
     </Card>
   )
 }
@@ -254,7 +254,7 @@ function SkeletonTomorrow() {
           </Button>
         </Card>
       ) : (
-        <p className="text-center text-sm text-ink/60">Loading tomorrow’s forecast…</p>
+        <p className="text-center text-sm text-ink/65">Loading tomorrow’s forecast…</p>
       )}
     </div>
   )

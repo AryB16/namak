@@ -167,7 +167,7 @@ function HiddenCost({ saltM3, cropM3 }: { saltM3: number; cropM3: number }) {
         <Reveal delay={0.1}>
           <p className="mt-14 text-[72px] leading-none font-semibold tracking-[-0.05em] text-teal-water tabular md:text-[148px]">
             <CountUp value={saltM3} duration={1.6} />
-            <span className="ml-2 text-[0.35em] tracking-tight text-ink/60">m³</span>
+            <span className="ml-2 text-[0.35em] tracking-tight text-ink/65">m³</span>
           </p>
           <p className="mx-auto mt-5 max-w-[620px] text-[19px] leading-snug text-ink/70 md:text-[22px]">
             of water a year — just to wash salt below the roots, on one small farm near Al Ain. Growers guess this number. Namak
@@ -266,7 +266,7 @@ function DebtStory({ s }: { s: ReturnType<typeof useStory> }) {
           <div className="rounded-[28px] bg-salt p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.35)] md:p-7">
             <div className="flex items-baseline justify-between">
               <p className="text-[13px] font-semibold text-ink/70">Root-zone salt · date palms</p>
-              <p className="text-[12px] text-ink/60">dS/m · ERA5 weather</p>
+              <p className="text-[12px] text-ink/65">dS/m · ERA5 weather</p>
             </div>
             <svg viewBox={`0 0 ${W} ${H + 24}`} className="mt-4 w-full" role="img" aria-label="Root-zone salt over a year: habit rises above the limit in summer; Namak stays at the limit">
               <line x1={0} x2={W} y1={y(target)} y2={y(target)} stroke="#c0362c" strokeDasharray="6 6" strokeWidth={1.5} />
@@ -345,7 +345,7 @@ function ValveSection() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-glow-salt text-[15px] font-semibold">W</span>
                 <span>
                   <span className="block text-[15px] font-semibold">Farm worker</span>
-                  <span className="block text-[12px] text-ink/60">voice note · Hindi</span>
+                  <span className="block text-[12px] text-ink/65">voice note · Hindi</span>
                 </span>
               </div>
               <div className="space-y-3 px-3 py-5">

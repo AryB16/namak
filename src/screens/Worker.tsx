@@ -394,7 +394,7 @@ function ChatHeader() {
       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-glow-salt text-[15px] font-semibold text-ink">W</div>
       <div className="leading-tight">
         <p className="text-[15px] font-semibold">Farm worker</p>
-        <p className="text-[12px] text-ink/60">voice notes · Valves 1–3</p>
+        <p className="text-[12px] text-ink/65">voice notes · Valves 1–3</p>
       </div>
     </div>
   )

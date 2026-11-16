@@ -128,7 +128,7 @@ export default function App() {
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.28, ease: EASE }}
         >
-          <Suspense fallback={<p className="py-24 text-center text-ink/60">Loading…</p>}>
+          <Suspense fallback={<p className="py-24 text-center text-ink/65">Loading…</p>}>
             {route === 'tomorrow' && <Tomorrow />}
             {route === 'compare' && <Compare />}
             {route === 'replay' && <Replay />}
@@ -139,7 +139,7 @@ export default function App() {
         </motion.main>
       </AnimatePresence>
 
-      <footer className="mx-auto hidden max-w-[1080px] px-6 pb-10 text-[12px] text-ink/60 md:block">
+      <footer className="mx-auto hidden max-w-[1080px] px-6 pb-10 text-[12px] text-ink/65 md:block">
         Weather: Open-Meteo (live forecast, ERA5 history). Crop and salt science: FAO Irrigation & Drainage Papers 29, 56, 61.
         Demo farm, well EC and prices are illustrative.
       </footer>
@@ -156,7 +156,7 @@ export default function App() {
                 <a
                   href={`#${id}`}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[10.5px] font-medium ${active ? 'text-teal-water' : 'text-ink/60'}`}
+                  className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[10.5px] font-medium ${active ? 'text-teal-water' : 'text-ink/65'}`}
                 >
                   <Icon className={`h-[22px] w-[22px] ${active ? 'stroke-[2.2]' : ''}`} />
                   {short}
