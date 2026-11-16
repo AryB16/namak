@@ -340,7 +340,7 @@ function ValveSection() {
             {LANGS.map((l, i) => (
               <Reveal key={l.id} delay={0.08 * i} y={16}>
                 <p className="flex items-baseline gap-3">
-                  <span className="w-20 shrink-0 text-[12px] font-semibold text-white/50">{l.name}</span>
+                  <span className="w-20 shrink-0 text-[12px] font-semibold text-white/65">{l.name}</span>
                   <span dir={l.rtl ? 'rtl' : 'ltr'} lang={l.bcp47} className="min-w-0 flex-1 truncate text-left text-[17px] text-white/80 md:text-[19px]">
                     {texts[l.id]?.split(/[.।۔]/)[0]}
                   </span>
@@ -473,7 +473,7 @@ function Final({ from, to }: { from: string; to: string }) {
             Why it works ›
           </a>
         </div>
-        <p className="mx-auto mt-10 max-w-[560px] text-[13px] leading-relaxed text-white/50">
+        <p className="mx-auto mt-10 max-w-[560px] text-[13px] leading-relaxed text-white/65">
           Illustrative farm near Al Ain. Real weather: Open-Meteo forecast and ERA5 reanalysis ({monthYear(from)} – {monthYear(to)}).
           Science: FAO Irrigation & Drainage Papers 29, 56 and 61. Works offline · English, العربية, हिन्दी, اردو, മലയാളം.
         </p>

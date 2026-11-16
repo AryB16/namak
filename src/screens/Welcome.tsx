@@ -42,7 +42,7 @@ export default function Welcome() {
           className="flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-7 text-[17px] font-semibold text-ink shadow-[0_12px_50px_-12px_rgba(95,211,198,0.8)]"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-water text-[11px] text-white">▶</span>
-          Watch the demo <span className="font-normal text-ink/60">· 60 s</span>
+          Watch the demo <span className="font-normal text-ink/70">· 60 s</span>
         </motion.button>
         <motion.button
           onClick={explore}
@@ -70,7 +70,7 @@ export default function Welcome() {
           </li>
         ))}
       </motion.ul>
-      <p className="absolute bottom-5 left-0 right-0 text-[12px] text-white/45">
+      <p className="absolute bottom-5 left-0 right-0 text-[12px] text-white/60">
         Illustrative demo farm · real weather from Open-Meteo · science from the UN FAO
       </p>
     </main>
