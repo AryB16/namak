@@ -6,7 +6,7 @@
 
 ### Salt-aware irrigation for desert farms
 
-*Your well is salty. Namak tells you exactly how much to water — salt included —<br>and sends the plan to the farm worker as a voice message in their own language.*
+*Your well is salty. Namak tells you exactly how much to water — salt included — and sends the plan to the farm worker as a voice message in their own language.*
 
 <br>
 
