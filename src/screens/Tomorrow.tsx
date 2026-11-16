@@ -33,7 +33,7 @@ export default function Tomorrow() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <Reveal y={16} className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[15px] font-medium text-ink/65">{dayLabel(day0.date, 'long')} · demo farm near Al Ain</p>
           <h1 className="text-[40px] leading-[1.05] font-semibold md:text-[56px]">Tomorrow’s watering plan</h1>
@@ -42,11 +42,11 @@ export default function Tomorrow() {
           <SourceTag>{live ? 'Live weather forecast' : 'Saved weather forecast'}</SourceTag>
           <SourceTag tone="sand">Example farm</SourceTag>
         </div>
-      </Reveal>
+      </div>
 
       <HowItWorks />
 
-      <Reveal y={24}>
+      <div>
         <section data-demo="hero" className="relative overflow-hidden rounded-[32px] bg-night p-6 text-white md:p-10">
           <div
             aria-hidden
@@ -94,7 +94,7 @@ export default function Tomorrow() {
             </div>
           </div>
         </section>
-      </Reveal>
+      </div>
 
       <div>
         <h2 className="mb-1 text-[28px] font-semibold md:text-[32px]">Each valve, tomorrow</h2>
