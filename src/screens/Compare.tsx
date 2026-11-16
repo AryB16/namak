@@ -1,7 +1,7 @@
 import { animate } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { useDemoEvent } from '../demo/Demo'
-import { Button, Card, Eyebrow, SaltGauge, SourceTag } from '../components/ui'
+import { Button, Card, Eyebrow, SaltGauge, ResultsSwitch, SourceTag } from '../components/ui'
 import { Term } from '../components/explain'
 import { EASE } from '../components/motion'
 import { m } from 'motion/react'
@@ -54,6 +54,7 @@ export default function Compare() {
 
   return (
     <div className="space-y-5">
+      <ResultsSwitch current="compare" />
       <div>
         <Eyebrow>The usual routine vs Namak</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">

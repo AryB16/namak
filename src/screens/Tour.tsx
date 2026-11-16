@@ -5,53 +5,25 @@
 import { m, useMotionValueEvent, useScroll, useTransform } from 'motion/react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { markToured } from '../lib/tour'
+import { useDemo } from '../demo/Demo'
 import { CountUp, EASE, Reveal } from '../components/motion'
-import { DEMO_FARM } from '../data/demoFarm'
-import era5 from '../data/snapshot-era5.json'
-import { compareYear } from '../engine/farm'
-import { replaySeason, type WeatherDay } from '../engine/plan'
 import { LANGS } from '../lib/instruction'
+import type { Story } from '../lib/story'
 import demoAssets from '../data/demoAssets.json'
 
-type Story = ReturnType<typeof computeStory>
-
-function computeStory() {
-  const days = era5.days as WeatherDay[]
-  const year = compareYear(DEMO_FARM, days)
-  // Only the palm valve needs a day-by-day replay (for the pinned chart); the rest comes from compareYear.
-  const pv = DEMO_FARM.valves.find((v) => v.cropId === 'date-palm')!
-  const r = replaySeason(DEMO_FARM, pv, days)
-  const palms = { v: pv, r }
-  const over = (d: { eceEnd: number; target: number }[]) => d.filter((x) => x.eceEnd > x.target + 0.05).length
-  const yTomato = year.valves.find((v) => v.valve.cropId === 'tomato')!
-  return {
-    saltM3: year.saltLitres / 1000,
-    cropM3: (year.namakLitres - year.saltLitres) / 1000,
-    // Same figures as the "Habit vs Namak" screen and the README (12 months of ERA5 weather).
-    savedPct: (year.savedLitres / year.habitLitres) * 100,
-    palms,
-    palmHabitOver: over(r.habit),
-    palmNamakOver: over(r.namak),
-    palmPeakPct: (Math.max(...r.habit.map((d) => d.eceEnd)) / r.habit[0].target - 1) * 100,
-    tomatoHabit: yTomato.habitYield,
-    tomatoNamak: yTomato.namakYield,
-    from: days.slice(-365)[0].date,
-    to: days[days.length - 1].date,
-  }
-}
-
-/** Compute the story after first paint so the hero appears instantly. */
+/** Compute the story off the main thread (Web Worker) so the first screen never stalls. */
 function useStory(): Story | null {
   const [s, setS] = useState<Story | null>(null)
   useEffect(() => {
-    const run = () => setS(computeStory())
-    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }
-    if (w.requestIdleCallback) {
-      const id = w.requestIdleCallback(run, { timeout: 1200 })
-      return () => (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id)
+    let w: Worker | null = null
+    try {
+      w = new Worker(new URL('../lib/story.worker.ts', import.meta.url), { type: 'module' })
+      w.onmessage = (e: MessageEvent<Story>) => setS(e.data)
+      w.onerror = () => import('../lib/story').then((m) => setS(m.computeStory()))
+    } catch {
+      import('../lib/story').then((m) => setS(m.computeStory()))
     }
-    const t = setTimeout(run, 200)
-    return () => clearTimeout(t)
+    return () => w?.terminate()
   }, [])
   return s
 }
@@ -63,11 +35,28 @@ function openFarm() {
   window.location.hash = 'tomorrow'
 }
 
+/** Below-the-fold sections are heavy to lay out; build them when the reader starts scrolling (or after a few idle seconds). */
+function useWantsMore(): boolean {
+  const [go, setGo] = useState(false)
+  useEffect(() => {
+    const on = () => setGo(true)
+    const evs = ['scroll', 'wheel', 'touchstart', 'keydown'] as const
+    evs.forEach((e) => window.addEventListener(e, on, { once: true, passive: true }))
+    const t = setTimeout(on, 4000)
+    return () => {
+      clearTimeout(t)
+      evs.forEach((e) => window.removeEventListener(e, on))
+    }
+  }, [])
+  return go
+}
+
 export default function Tour() {
-  const s = useStory()
+  const story = useStory()
+  const s = useWantsMore() ? story : null
   return (
     <div className="bg-night text-white">
-      <TourHeader />
+      <TourHeader ready={!!s} />
       <Hero />
       {s ? (
         <>
@@ -84,7 +73,7 @@ export default function Tour() {
   )
 }
 
-function TourHeader() {
+function TourHeader({ ready }: { ready: boolean }) {
   const [tone, setTone] = useState<'dark' | 'light'>('dark')
   useEffect(() => {
     const els = [...document.querySelectorAll<HTMLElement>('[data-tone]')]
@@ -96,7 +85,7 @@ function TourHeader() {
     )
     els.forEach((el) => io.observe(el))
     return () => io.disconnect()
-  }, [])
+  }, [ready])
   const dark = tone === 'dark'
   return (
     <header
@@ -122,6 +111,7 @@ function Hero() {
   const scale = useTransform(scrollYProgress, [0, 1], [1, 0.9])
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
   const words = ['Your', 'well', 'is', 'salty.']
+  const demo = useDemo()
   return (
     <section ref={ref} data-tone="dark" className="relative flex h-[100svh] min-h-[560px] items-center justify-center overflow-hidden px-6">
       <m.div
@@ -160,13 +150,38 @@ function Hero() {
         >
           Every litre of well water leaves a little salt in the soil. Namak works out how much water each crop really needs — and tells the farm worker, by voice.
         </m.p>
+        <m.div
+          className="mx-auto mt-10 flex w-full max-w-[520px] flex-col gap-3 sm:flex-row sm:justify-center"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: EASE, delay: 0.5 }}
+        >
+          <m.button
+            onClick={demo.start}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-7 text-[17px] font-semibold text-ink shadow-[0_12px_50px_-12px_rgba(95,211,198,0.8)]"
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-water text-[11px] text-white">▶</span>
+            Watch the demo <span className="font-normal text-ink/70">· 60 s</span>
+          </m.button>
+          <m.button
+            onClick={openFarm}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="min-h-14 rounded-full bg-white/10 px-7 text-[17px] font-semibold text-white ring-1 ring-white/20 hover:bg-white/15"
+          >
+            Explore on my own
+          </m.button>
+        </m.div>
       </m.div>
       <m.div
         aria-hidden
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/50"
+        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-[12px] font-medium text-white/55"
         animate={{ y: [0, 8, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
       >
+        Scroll for the story
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M6 9l6 6 6-6" />
         </svg>

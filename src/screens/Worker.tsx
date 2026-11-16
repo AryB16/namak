@@ -15,7 +15,7 @@ import { CROPS } from '../engine/crops'
 import { planFarm, type FarmPlan } from '../engine/farm'
 import type { Farm } from '../engine/plan'
 import { LANGS, type InstructionPlan, type Lang } from '../lib/instruction'
-import { int, minutes as fmtMin, one, pct } from '../lib/format'
+import { int, one, pct } from '../lib/format'
 import { browserVoiceFor, fetchInstruction, fetchVoice, instructionPlan, speakInBrowser, type ECRead } from '../lib/worker'
 import { useApp } from '../state'
 import { useDemoEvent } from '../demo/Demo'
@@ -38,9 +38,9 @@ function savedVoice(sample: SampleId | null, p: InstructionPlan, lang: Lang) {
   return v ? { text: v.text, url: `/demo/voice-${sample}-${lang}.m4a` } : null
 }
 
-type Stage = 'ask-photo' | 'reading' | 'confirm' | 'ask-lang' | 'generating' | 'done'
+type Stage = 'ask-lang' | 'ask-photo' | 'reading' | 'confirm' | 'generating' | 'done'
 type Msg =
-  | { id: number; from: 'bot' | 'farmer'; kind: 'text'; text: ReactNode }
+  | { id: number; from: 'bot' | 'farmer'; kind: 'text'; text: ReactNode; lang?: Lang; gloss?: string }
   | { id: number; from: 'farmer'; kind: 'photo'; src: string }
   | { id: number; from: 'bot'; kind: 'thinking'; label: string }
   | { id: number; from: 'bot'; kind: 'voice'; text: string; url: string | null; lang: Lang; browser: boolean }
@@ -49,13 +49,76 @@ type NewMsg = Msg extends unknown ? (Msg extends infer T ? (T extends Msg ? Omit
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+/**
+ * The assistant's own lines in each language (the voice message itself is written by Gemini).
+ * Prototype translations: not yet checked by native speakers.
+ */
+const LINES: Record<
+  Lang,
+  {
+    askPhoto: string
+    confirmQ: (x: string) => string
+    yes: string
+    no: string
+    retake: string
+    saltier: (a: string, b: string) => string
+    lesser: (a: string, b: string) => string
+    same: string
+    planNow: string
+    restart: string
+  }
+> = {
+  en: {
+    askPhoto: 'Great. Before I send tomorrow’s watering times, please send me a photo of your salt meter dipped in a cup of well water.',
+    confirmQ: (x) => `The meter shows ${x}. Is that right?`,
+    yes: 'Yes, that’s right',
+    no: 'No, I’ll send another',
+    retake: 'No problem — please send another photo.',
+    saltier: (a, b) => `Thanks! Your well water is saltier than last time (${a} → ${b}), so I’ve added a little more water to wash the salt out.`,
+    lesser: (a, b) => `Thanks! Your well water is less salty than last time (${a} → ${b}), so I’ve used a little less water.`,
+    same: 'Thanks! Your well water is about the same as last time.',
+    planNow: 'Here is tomorrow’s plan as a voice message:',
+    restart: 'Start again',
+  },
+  hi: {
+    askPhoto: 'बहुत अच्छा। कल के पानी देने का समय भेजने से पहले, कृपया कुएँ के पानी के कप में डूबे नमक-मीटर की एक फ़ोटो भेजें।',
+    confirmQ: (x) => `मीटर ${x} दिखा रहा है। क्या यह सही है?`,
+    yes: 'हाँ, सही है',
+    no: 'नहीं, दूसरी फ़ोटो',
+    retake: 'कोई बात नहीं — कृपया दूसरी फ़ोटो भेजें।',
+    saltier: (a, b) => `धन्यवाद! आपके कुएँ का पानी पिछली बार से ज़्यादा खारा है (${a} → ${b}), इसलिए मैंने नमक धोने के लिए थोड़ा ज़्यादा पानी जोड़ा है।`,
+    lesser: (a, b) => `धन्यवाद! आपके कुएँ का पानी पिछली बार से कम खारा है (${a} → ${b}), इसलिए मैंने थोड़ा कम पानी रखा है।`,
+    same: 'धन्यवाद! आपके कुएँ का पानी पिछली बार जैसा ही है।',
+    planNow: 'यह रहा कल का प्लान, एक वॉइस मैसेज में:',
+    restart: 'फिर से शुरू करें',
+  },
+  ar: {
+    askPhoto: 'رائع. قبل أن أرسل مواعيد الري لغد، من فضلك أرسل صورة لجهاز قياس الملوحة مغموسًا في كوب من ماء البئر.',
+    confirmQ: (x) => `الجهاز يُظهر ${x}. هل هذا صحيح؟`,
+    yes: 'نعم، صحيح',
+    no: 'لا، سأرسل صورة أخرى',
+    retake: 'لا مشكلة — من فضلك أرسل صورة أخرى.',
+    saltier: (a, b) => `شكرًا! ماء البئر أصبح أكثر ملوحة من المرة السابقة (من ${a} إلى ${b})، لذلك أضفت قليلًا من الماء لغسل الملح.`,
+    lesser: (a, b) => `شكرًا! ماء البئر أصبح أقل ملوحة من المرة السابقة (من ${a} إلى ${b})، لذلك خفّضت الماء قليلًا.`,
+    same: 'شكرًا! ماء البئر كما كان في المرة السابقة.',
+    planNow: 'هذه خطة الغد في رسالة صوتية:',
+    restart: 'ابدأ من جديد',
+  },
+}
+
 export default function Worker() {
   const { farm, setFarm, planDays, addReading, online, demoDay } = useApp()
   const nextId = useRef(1)
   const [msgs, setMsgs] = useState<Msg[]>(() => initialMsgs())
-  const [stage, setStage] = useState<Stage>('ask-photo')
-  const [pending, setPending] = useState<(typeof SAMPLES)[number] | null>(null)
-  const [sample, setSample] = useState<SampleId | null>(null)
+  const [stage, setStageState] = useState<Stage>('ask-lang')
+  const stageRef = useRef<Stage>('ask-lang')
+  const setStage = (st: Stage) => {
+    stageRef.current = st
+    setStageState(st)
+  }
+  const langRef = useRef<Lang>('en')
+  const [lang, setLang] = useState<Lang>('en')
+  const pendingRef = useRef<(typeof SAMPLES)[number] | null>(null)
   const [diff, setDiff] = useState<{ before: FarmPlan; after: FarmPlan; from: number; to: number } | null>(null)
   const autoConfirm = useRef(false)
   const scroller = useRef<HTMLDivElement>(null)
@@ -63,15 +126,7 @@ export default function Worker() {
   farmRef.current = farm
 
   function initialMsgs(): Msg[] {
-    return [
-      { id: 0, from: 'bot', kind: 'text', text: 'Hi! I’m Namak, your farm assistant.' },
-      {
-        id: -1,
-        from: 'bot',
-        kind: 'text',
-        text: 'Before I send tomorrow’s watering times, please send me a photo of your salt meter dipped in a cup of well water.',
-      },
-    ]
+    return [{ id: 0, from: 'bot', kind: 'text', text: 'Hi! I’m Namak, your farm assistant. Which language would you like to use?' }]
   }
 
   const push = (m: NewMsg) => {
@@ -81,6 +136,11 @@ export default function Worker() {
   }
   const replace = (id: number, m: NewMsg) => setMsgs((x) => x.map((y) => (y.id === id ? ({ ...m, id } as Msg) : y)))
   const relabel = (id: number, label: string) => setMsgs((x) => x.map((y) => (y.id === id && y.kind === 'thinking' ? { ...y, label } : y)))
+  /** A bot line in the farmer's language, with the English underneath for everyone else. */
+  const say = (pick: (t: (typeof LINES)['en']) => string) => {
+    const l = langRef.current
+    push({ from: 'bot', kind: 'text', text: pick(LINES[l]), lang: l, gloss: l === 'en' ? undefined : pick(LINES.en) })
+  }
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' })
@@ -88,111 +148,110 @@ export default function Worker() {
 
   const plan = useMemo(() => (planDays.length ? planFarm(farm, planDays) : null), [farm, planDays])
 
-  // 1. Farmer sends a meter photo -> Gemini reads it.
+  // 1. The farmer picks a language; the assistant asks for the salt-meter photo in that language.
+  async function chooseLang(l: Lang) {
+    if (stageRef.current !== 'ask-lang') return
+    const L = LANGS.find((x) => x.id === l)!
+    langRef.current = l
+    setLang(l)
+    setStage('ask-photo')
+    push({ from: 'farmer', kind: 'text', text: <span lang={L.bcp47}>{L.native}</span> })
+    await wait(450)
+    say((t) => t.askPhoto)
+  }
+
+  // 2. The farmer sends a meter photo -> Gemini reads it -> the farmer confirms.
   async function sendPhoto(s: (typeof SAMPLES)[number]) {
-    if (stage !== 'ask-photo') return
+    if (stageRef.current !== 'ask-photo') return
     setStage('reading')
     push({ from: 'farmer', kind: 'photo', src: s.src })
     await wait(350)
     const t = push({ from: 'bot', kind: 'thinking', label: 'Gemini is reading the meter…' })
     // The reading of this example photo was made once by Gemini and saved.
     await wait(1600)
-    replace(t, {
-      from: 'bot',
-      kind: 'text',
-      text: (
-        <>
-          The meter shows <strong>{s.label}</strong>
-          {s.reading.unit === 'µS/cm' ? <> — that’s <strong>{one(s.reading.ec)}</strong> on Namak’s scale</> : null}. Is that right?
-        </>
-      ),
-    })
-    setPending(s)
+    const l = langRef.current
+    const x = s.reading.unit === 'µS/cm' ? `${s.label} (= ${one(s.reading.ec)} mS/cm)` : s.label
+    replace(t, { from: 'bot', kind: 'text', text: LINES[l].confirmQ(x), lang: l, gloss: l === 'en' ? undefined : LINES.en.confirmQ(x) })
+    pendingRef.current = s
     setStage('confirm')
   }
 
-  // 2. Farmer confirms -> Namak updates tomorrow's plan.
+  // 3. Confirmed -> Namak updates tomorrow's plan -> Gemini writes and voices it in the chosen language.
   async function confirm(yes: boolean) {
-    if (stage !== 'confirm' || !pending) return
+    const s = pendingRef.current
+    if (stageRef.current !== 'confirm' || !s) return
+    const l = langRef.current
+    const Lc = LANGS.find((x) => x.id === l)!
     if (!yes) {
-      push({ from: 'farmer', kind: 'text', text: 'No, I’ll send another photo.' })
+      push({ from: 'farmer', kind: 'text', text: LINES[l].no, lang: l })
       await wait(400)
-      push({ from: 'bot', kind: 'text', text: 'No problem — please send another photo.' })
-      setPending(null)
+      say((t) => t.retake)
+      pendingRef.current = null
       setStage('ask-photo')
       return
     }
-    push({ from: 'farmer', kind: 'text', text: 'Yes, that’s right.' })
+    setStage('generating')
+    push({ from: 'farmer', kind: 'text', text: LINES[l].yes, lang: l })
     const f = farmRef.current
-    const ec = Math.round(pending.reading.ec * 100) / 100
+    const ec = Math.round(s.reading.ec * 100) / 100
     const before = planFarm(f, planDays)
     const next: Farm = { ...f, wellEC: ec }
     const after = planFarm(next, planDays)
-    const tB = before.valves.reduce((a, v) => a + v.days[0].minutes, 0)
-    const tA = after.valves.reduce((a, v) => a + v.days[0].minutes, 0)
     setDiff({ before, after, from: f.wellEC, to: ec })
     addReading({ at: new Date().toISOString(), ec, previous: f.wellEC, source: 'photo' })
     setFarm(next)
-    setSample(pending.id)
-    setPending(null)
+    pendingRef.current = null
     await wait(500)
-    const change =
-      ec > f.wellEC + 0.05
-        ? `Your well is saltier than last time (${one(f.wellEC)} → ${one(ec)}), so I’ve added a little more water to wash the salt out.`
-        : ec < f.wellEC - 0.05
-          ? `Your well is less salty than last time (${one(f.wellEC)} → ${one(ec)}), so I’ve cut back a little.`
-          : 'Your well is about the same as last time.'
-    push({ from: 'bot', kind: 'text', text: `Thanks! ${change} Tomorrow’s total: ${fmtMin(tB)} → ${fmtMin(tA)}.` })
-    await wait(600)
-    push({ from: 'bot', kind: 'text', text: 'Which language should I send tomorrow’s plan in?' })
-    setStage('ask-lang')
-  }
-
-  // 3. Farmer picks a language -> Gemini writes and voices the plan.
-  async function chooseLang(lang: Lang) {
-    if ((stage !== 'ask-lang' && stage !== 'done') || !plan) return
-    const L = LANGS.find((l) => l.id === lang)!
-    setStage('generating')
-    push({ from: 'farmer', kind: 'text', text: <span lang={L.bcp47}>{L.native}</span> })
+    const a = one(f.wellEC)
+    const b = one(ec)
+    say((t) => (ec > f.wellEC + 0.05 ? t.saltier(a, b) : ec < f.wellEC - 0.05 ? t.lesser(a, b) : t.same))
+    await wait(700)
+    say((t) => t.planNow)
     await wait(300)
-    const t = push({ from: 'bot', kind: 'thinking', label: `Gemini is writing tomorrow’s plan in ${L.name}…` })
-    const p = instructionPlan(planFarm(farmRef.current, planDays))
-    const saved = savedVoice(sample, p, lang)
+    const th = push({ from: 'bot', kind: 'thinking', label: `Gemini is writing tomorrow’s plan in ${Lc.name}…` })
+    const p = instructionPlan(after)
+    const saved = savedVoice(s.id, p, l)
     let text: string
     let url: string | null
     if (saved) {
       await wait(1300)
-      relabel(t, `Gemini is recording the voice message…`)
+      relabel(th, 'Gemini is recording the voice message…')
       await wait(1200)
       text = saved.text
       url = saved.url
     } else {
       const started = Date.now()
-      const ins = await fetchInstruction(p, lang)
+      const ins = await fetchInstruction(p, l)
       await wait(Math.max(0, 900 - (Date.now() - started)))
-      relabel(t, `Gemini is recording the voice message…`)
+      relabel(th, 'Gemini is recording the voice message…')
       const s2 = Date.now()
-      url = online ? await fetchVoice(ins.text, lang) : null
+      url = online ? await fetchVoice(ins.text, l) : null
       await wait(Math.max(0, 900 - (Date.now() - s2)))
       text = ins.text
     }
-    replace(t, { from: 'bot', kind: 'voice', text, url, lang, browser: !url && !!browserVoiceFor(lang) })
+    replace(th, { from: 'bot', kind: 'voice', text, url, lang: l, browser: !url && !!browserVoiceFor(l) })
     setStage('done')
   }
 
   function restart() {
     setMsgs(initialMsgs())
-    setPending(null)
-    setSample(null)
+    pendingRef.current = null
     setDiff(null)
-    setStage('ask-photo')
+    setStage('ask-lang')
   }
 
-  // Guided demo: send the first example photo and confirm it; then ask for the plan in Hindi.
+  // Guided demo: choose Hindi, send the first example photo and confirm it.
   useDemoEvent('read-sample', () => {
     autoConfirm.current = true
-    if (stage !== 'ask-photo') restart()
-    setTimeout(() => void sendPhoto(SAMPLES[0]), stage !== 'ask-photo' ? 300 : 0)
+    void (async () => {
+      if (stageRef.current !== 'ask-lang') {
+        restart()
+        await wait(300)
+      }
+      await chooseLang('hi')
+      await wait(700)
+      await sendPhoto(SAMPLES[0])
+    })()
   })
   useEffect(() => {
     if (stage === 'confirm' && autoConfirm.current) {
@@ -202,11 +261,10 @@ export default function Worker() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage])
-  useDemoEvent('send-note', () => void chooseLang('hi'))
 
   if (!plan) return <Card>Loading tomorrow’s plan…</Card>
 
-  const step = stage === 'ask-photo' || stage === 'reading' || stage === 'confirm' ? 1 : stage === 'ask-lang' ? 2 : 3
+  const step = stage === 'generating' || stage === 'done' ? 3 : 1
   const isSaved = demoDay
 
   return (
@@ -215,9 +273,9 @@ export default function Worker() {
         <Eyebrow>The farmer’s phone</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">A farm assistant in the farmer’s pocket</h1>
         <p className="mt-3 max-w-[780px] text-[16px] leading-relaxed text-ink/75">
-          This is what the person who works on the farm sees. Namak chats with them like a supervisor would: it asks for one
-          quick check of the well water, updates the plan, and sends tomorrow’s watering times as a voice message in their own
-          language. Try it — tap the options on the phone.
+          This is what the farmer sees on their phone. Namak, the AI farm assistant, chats with them like a supervisor would: it asks
+          which language they speak, asks for one quick check of the well water, updates the plan, and sends tomorrow’s
+          watering times as a voice message. Try it — tap the options on the phone.
         </p>
       </div>
 
@@ -225,7 +283,7 @@ export default function Worker() {
         <div data-demo="phone">
           <Phone>
             <ChatHeader />
-            <div ref={scroller} className="flex h-[440px] flex-col gap-2.5 overflow-y-auto px-3 py-4" aria-live="polite">
+            <div ref={scroller} className="flex h-[440px] flex-col gap-2.5 md:h-[clamp(330px,calc(100svh-540px),460px)] overflow-y-auto px-3 py-4" aria-live="polite">
               <AnimatePresence initial={false}>
                 {msgs.map((msg) => (
                   <m.div
@@ -243,6 +301,7 @@ export default function Worker() {
             </div>
             <Replies
               stage={stage}
+              lang={lang}
               onPhoto={sendPhoto}
               onConfirm={confirm}
               onLang={chooseLang}
@@ -255,11 +314,11 @@ export default function Worker() {
           <Card>
             <h2 className="text-[21px] font-semibold">What’s happening</h2>
             <ol className="mt-4 space-y-4">
-              <Step n={1} active={step === 1} done={step > 1} title="The farmer checks the well water">
+              <Step n={1} active={step === 1} done={!!diff} title="The farmer checks the well water">
                 Well water slowly gets saltier as it is pumped, and saltier water needs more water to wash the salt out of the soil.
                 So once a week the farmer dips a cheap salt meter (about AED 100) in a cup of well water and sends Namak a photo.
               </Step>
-              <Step n={2} active={step === 2} done={step > 2} title="Gemini reads it, Namak updates the plan">
+              <Step n={2} active={false} done={!!diff} title="Gemini reads it, Namak updates the plan">
                 Gemini reads the number in the photo. After the farmer confirms it, Namak recalculates how long each valve
                 should run tomorrow.
               </Step>
@@ -327,72 +386,82 @@ function Bubble({ msg }: { msg: Msg }) {
       </div>
     )
   }
+  const L = msg.lang ? LANGS.find((l) => l.id === msg.lang) : undefined
   return (
     <div
       className={`rounded-[20px] px-3.5 py-2.5 text-[14px] leading-snug ${msg.from === 'farmer' ? 'rounded-br-md bg-teal-water text-white' : 'rounded-bl-md bg-white text-ink shadow-sm'}`}
     >
-      {msg.text}
+      <span dir={L?.rtl ? 'rtl' : undefined} lang={L?.bcp47} className="block">
+        {msg.text}
+      </span>
+      {msg.gloss && <span className="mt-1.5 block border-t border-black/5 pt-1.5 text-[12px] text-ink/60">{msg.gloss}</span>}
     </div>
   )
 }
 
 function Replies({
   stage,
+  lang,
   onPhoto,
   onConfirm,
   onLang,
   onRestart,
 }: {
   stage: Stage
+  lang: Lang
   onPhoto: (s: (typeof SAMPLES)[number]) => void
   onConfirm: (yes: boolean) => void
   onLang: (l: Lang) => void
   onRestart: () => void
 }) {
-  const chip = 'min-h-11 rounded-full bg-white px-3.5 text-[13px] font-semibold text-ink shadow-sm ring-1 ring-black/5 hover:ring-teal-water'
+  const base = 'min-h-11 rounded-full px-4 text-[14px] font-semibold shadow-sm transition-colors'
+  const light = `${base} bg-white text-ink ring-1 ring-black/10 hover:ring-teal-water`
+  const dark = `${base} bg-teal-water text-white hover:brightness-110`
+  const t = LINES[lang]
   return (
-    <div className="min-h-[124px] border-t border-black/5 bg-white/90 px-3 py-3">
+    <div className="min-h-[128px] border-t border-black/5 bg-white/90 px-3 py-3">
+      {stage === 'ask-lang' && (
+        <>
+          <p className="mb-2 text-[12px] font-semibold text-ink/65">Choose a language:</p>
+          <div className="flex flex-wrap gap-2">
+            {LANGS.map((l) => (
+              <button key={l.id} onClick={() => onLang(l.id)} className={light}>
+                <span lang={l.bcp47}>{l.native}</span>
+                {l.id !== 'en' && <span className="ml-1.5 text-[12px] font-medium text-ink/60">{l.name}</span>}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
       {stage === 'ask-photo' && (
         <>
-          <p className="mb-2 text-[11px] font-semibold text-ink/65">Send a photo of the salt meter (example photos):</p>
+          <p className="mb-2 text-[12px] font-semibold text-ink/65">Send a photo of the salt meter (example photos):</p>
           <div className="grid grid-cols-3 gap-2">
             {SAMPLES.map((s) => (
-              <button key={s.id} onClick={() => onPhoto(s)} className="overflow-hidden rounded-xl ring-1 ring-black/10 transition-shadow hover:ring-2 hover:ring-teal-water">
+              <button key={s.id} onClick={() => onPhoto(s)} className="overflow-hidden rounded-xl bg-white ring-1 ring-black/10 transition-shadow hover:ring-2 hover:ring-teal-water">
                 <img src={s.src} alt={`Example salt meter photo showing ${s.label}`} className="h-16 w-full object-cover" />
-                <span className="block py-1 text-[11px] font-semibold">{s.label}</span>
+                <span className="block py-1 text-[11px] font-semibold text-ink">{s.label}</span>
               </button>
             ))}
           </div>
         </>
       )}
       {stage === 'confirm' && (
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => onConfirm(true)} className={`${chip} bg-teal-water text-white`}>
-            Yes, that’s right
+        <div className="flex flex-wrap gap-2" lang={LANGS.find((l) => l.id === lang)!.bcp47}>
+          <button onClick={() => onConfirm(true)} className={dark}>
+            {t.yes}
           </button>
-          <button onClick={() => onConfirm(false)} className={chip}>
-            No, send another
+          <button onClick={() => onConfirm(false)} className={light}>
+            {t.no}
           </button>
         </div>
       )}
-      {(stage === 'ask-lang' || stage === 'done') && (
-        <>
-          <p className="mb-2 text-[11px] font-semibold text-ink/65">
-            {stage === 'done' ? 'Hear it in another language:' : 'Choose a language:'}
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {LANGS.map((l) => (
-              <button key={l.id} onClick={() => onLang(l.id)} className={chip}>
-                <span lang={l.bcp47}>{l.native}</span>
-              </button>
-            ))}
-            {stage === 'done' && (
-              <button onClick={onRestart} className={`${chip} text-teal-water`}>
-                Start again
-              </button>
-            )}
-          </div>
-        </>
+      {stage === 'done' && (
+        <div className="flex h-[96px] items-center justify-center">
+          <button onClick={onRestart} className={light}>
+            {t.restart}
+          </button>
+        </div>
       )}
       {(stage === 'reading' || stage === 'generating') && (
         <p className="flex h-[96px] items-center justify-center gap-2 text-[13px] font-medium text-ink/65">

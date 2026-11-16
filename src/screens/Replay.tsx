@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Card, Eyebrow, SourceTag } from '../components/ui'
+import { Card, Eyebrow, ResultsSwitch, SourceTag } from '../components/ui'
 import { IconPause, IconPlay } from '../components/icons'
 import { CROPS } from '../engine/crops'
 import { replaySeason, totals, type ValveDay } from '../engine/plan'
@@ -108,6 +108,7 @@ export default function Replay() {
 
   return (
     <div className="space-y-5">
+      <ResultsSwitch current="replay" />
       <div>
         <Eyebrow>Proof: does it really work?</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">

@@ -61,8 +61,8 @@ export const STEPS: Step[] = [
   { route: 'compare', target: 'slider', caption: 'The well water here is salty. Watch what happens as it gets saltier: more and more water is needed just to wash the salt away.', ms: 9000, event: 'sweep-slider', eventDelay: 900 },
   { route: 'compare', target: 'counters', caption: 'Over a real year, Namak uses about 19% less water than the worker’s usual routine, and keeps every crop healthy.', ms: 6000 },
   { route: 'replay', target: 'replay-chart', caption: 'We replayed last year with real weather. Orange is the usual routine and teal is Namak. With the routine, salt piles up in the soil all summer.', ms: 9000, event: 'play-replay', eventDelay: 300 },
-  { route: 'worker', target: 'phone', caption: 'On the farmer’s phone, Namak asks for a photo of a cheap salt meter in well water. Gemini reads the number, the farmer confirms, and the plan updates.', ms: 10000, event: 'read-sample', eventDelay: 600 },
-  { route: 'worker', target: 'phone', caption: 'Then Gemini writes tomorrow’s watering times in the farmer’s language and reads them out as a voice message.', ms: 12000, event: 'send-note', eventDelay: 300 },
+  { route: 'worker', target: 'phone', caption: 'On the farmer’s phone, the AI assistant asks for their language, then a photo of a cheap salt meter in well water. Gemini reads the number and the farmer confirms it.', ms: 10000, event: 'read-sample', eventDelay: 600 },
+  { route: 'worker', target: 'phone', caption: 'Namak updates tomorrow’s plan, and Gemini writes it in the farmer’s language and reads it out as a voice message.', ms: 13000 },
 ]
 
 interface DemoCtx {

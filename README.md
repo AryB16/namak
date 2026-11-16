@@ -8,13 +8,13 @@
 *Namak* means salt in Hindi, Urdu and Persian.
 
 <p>
-<img src="docs/screenshots/0-welcome.jpg" width="820" alt="Welcome screen: Smarter watering for salty wells — Watch the demo or Explore on my own">
+<img src="docs/screenshots/0-welcome.jpg" width="820" alt="First screen: Your well is salty — Watch the demo or Explore on my own, scroll for the story">
 </p>
 <p>
 <img src="docs/screenshots/1-tomorrow.jpg" width="200" alt="Tomorrow screen: total watering time, habit vs Namak, send to worker">
 <img src="docs/screenshots/2-habit-vs-namak.jpg" width="200" alt="Habit vs Namak: salt costs this farm 2,230 m³ of water a year">
 <img src="docs/screenshots/3-replay.jpg" width="200" alt="Season replay on ERA5 weather: water and salt debt, habit vs Namak">
-<img src="docs/screenshots/4-worker.jpg" width="200" alt="Worker voice note in Hindi">
+<img src="docs/screenshots/4-worker.jpg" width="200" alt="AI assistant: the farmer’s chat with Namak, voice message in Hindi">
 </p>
 
 ---
@@ -35,19 +35,20 @@ Everyone asks *“how much water does the crop need?”* In the desert that is o
 
 ## What it does (6 screens, mobile-first, no login)
 
-First visit opens a welcome screen with two choices: **Watch the demo (60 s)** — a guided walkthrough that drives the real
-app by itself with plain-English captions (the slider moves, the voice note plays, a meter photo is read and confirmed;
-the farm is restored afterwards) — or **Explore on my own**. A scrolling story (“Your well is salty.”) is one tap away.
+First visit opens the story page (“Your well is salty.”) with two buttons: **Watch the demo (60 s)** — a guided walkthrough
+that drives the real app by itself with plain-English captions (the slider moves, a meter photo is read and confirmed, the
+voice message plays; the farm is restored afterwards) — or **Explore on my own**. Scrolling down tells the story.
+The menu has four items: **Plan · Results · ✦ AI assistant · How it works** (farm settings behind the gear icon).
 Every screen explains the idea from scratch in everyday words; the technical maths sits behind “How we worked this out”.
 
 
 | Screen | What you see |
 |---|---|
-| **Tomorrow** | Total watering time, a card per valve (“Valve 1 · Palms · 95 min · 00:00 → 01:35”), one-line *why* (heat + salt), a Salt Debt gauge, blend advice, and the 7-day plan with repayment days marked. |
-| **Habit vs Namak** | A year of real weather at the farm. Drag the **well-EC slider** and the salt water cost, water/AED saved and yield risk change live; when the water is too salty for a crop, Namak shows the RO/TSE **blend ratio**. |
-| **Season Replay** | Last year re-run day by day on **ERA5 reanalysis weather**: cumulative water and root-zone salt, habit vs Namak, animated. This is the proof that the decision beats the guess. |
-| **Worker** | Phone mock-up. *Send to the worker* → two short sentences in English, Hindi or Arabic, played as a voice message. *Check how salty the well is* → pick one of three example salt-meter photos → its reading appears → the owner confirms → the plan recalculates with a visible before/after. |
-| **Farm** | Location, well EC, blend water, valves (crop, plants, spacing, emitters, flow), soil test, the worker’s habit. Saved on the phone. |
+| **Plan** (tomorrow) | Total watering time, a card per valve (“Valve 1 · Palms · 95 min · 00:00 → 01:35”), one-line *why* (heat + salt), a Salt Debt gauge, blend advice, and the 7-day plan with repayment days marked. |
+| **Results · Water saved** | A year of real weather at the farm. Drag the **well-EC slider** and the salt water cost, water/AED saved and yield risk change live; when the water is too salty for a crop, Namak shows the RO/TSE **blend ratio**. |
+| **Results · Last year replayed** | Last year re-run day by day on **ERA5 reanalysis weather**: cumulative water and root-zone salt, habit vs Namak, animated. This is the proof that the decision beats the guess. |
+| **✦ AI assistant** | The farmer’s chat with Namak (Gemini) on a phone mock-up. Namak asks for a language (English, Hindi, Arabic; it replies in that language with an English line under it) → the farmer sends one of three example salt-meter photos → Gemini reads it → the farmer confirms → the plan recalculates with a visible before/after → Gemini writes tomorrow’s times in that language and sends them as a voice message. |
+| **Farm** (gear icon) | Location, well EC, blend water, valves (crop, plants, spacing, emitters, flow), soil test, the worker’s habit. Saved on the phone. |
 | **Why it works** | Sources, formulas, crop constants, real vs illustrative, limits, cost. |
 
 ## Does the decision beat the guess?

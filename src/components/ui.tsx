@@ -143,3 +143,25 @@ export function Button({
     </m.button>
   )
 }
+
+/** "Results" has two views: the year in numbers (#compare) and the day-by-day replay (#replay). */
+export function ResultsSwitch({ current }: { current: 'compare' | 'replay' }) {
+  const items = [
+    { id: 'compare', label: 'Water saved' },
+    { id: 'replay', label: 'Last year replayed' },
+  ] as const
+  return (
+    <nav aria-label="Results" className="inline-flex rounded-full bg-black/[0.05] p-1">
+      {items.map((i) => (
+        <a
+          key={i.id}
+          href={`#${i.id}`}
+          aria-current={i.id === current ? 'page' : undefined}
+          className={`inline-flex min-h-10 items-center rounded-full px-4 text-[14px] font-semibold transition-colors ${i.id === current ? 'bg-white text-ink shadow-[0_1px_4px_rgba(0,0,0,0.12)]' : 'text-ink/65 hover:text-ink'}`}
+        >
+          {i.label}
+        </a>
+      ))}
+    </nav>
+  )
+}

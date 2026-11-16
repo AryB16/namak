@@ -38,6 +38,9 @@ export default function Why() {
           Farms in the desert water their crops from wells. The trouble is that well water there is often salty. Here are the
           three problems that causes — and what Namak does about each.
         </p>
+        <a href="#tour" className="mt-3 inline-flex min-h-11 items-center text-[15px] font-semibold text-teal-water">
+          Prefer a story? Scroll through it →
+        </a>
       </div>
 
       <Card className="space-y-6">
