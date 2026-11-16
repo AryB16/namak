@@ -1,72 +1,104 @@
-# Namak — the salt-debt irrigation planner for desert farms
+<div align="center">
 
-> **Your well is salty. Every drop you pour adds to a salt debt your soil has to repay.
-> Namak tells your worker exactly how many minutes to open each valve tomorrow — and when to pay the debt down.**
+<img src="public/favicon.svg" width="76" alt="Namak logo">
 
-**Live:** https://namak-phi.vercel.app · **Problem:** Breaking Bytes A-001 “Smart Farming for the Desert” · built 16–17 Nov 2026
+# Namak
 
-*Namak* means salt in Hindi, Urdu and Persian.
+### Salt-aware irrigation for desert farms
 
-<p>
-<img src="docs/screenshots/0-welcome.jpg" width="820" alt="First screen: Your well is salty — Watch the demo or Explore on my own, scroll for the story">
+*Your well is salty. Namak tells you exactly how much to water — salt included —<br>and sends the plan to the farm worker as a voice message in their own language.*
+
+<br>
+
+<a href="https://namak-phi.vercel.app"><img src="https://img.shields.io/badge/%E2%96%B6%20%20Open%20the%20live%20app-namak--phi.vercel.app-0a6f69?style=for-the-badge" alt="Open the live app: namak-phi.vercel.app" height="40"></a>
+
+**[namak-phi.vercel.app](https://namak-phi.vercel.app)** · no login · press **Watch the demo** for a 60-second guided tour
+
+<br>
+
+![Breaking Bytes](https://img.shields.io/badge/Breaking%20Bytes-A--001%20Smart%20Farming%20for%20the%20Desert-1d1d1f?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-84%20passing-2e7d32?style=flat-square)
+![Offline](https://img.shields.io/badge/works-offline-e08a1e?style=flat-square)
+![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-6f62ff?style=flat-square)
+![Science](https://img.shields.io/badge/science-UN%20FAO%2029%20%C2%B7%2056%20%C2%B7%2061-0a6f69?style=flat-square)
+
+<br>
+
+<a href="https://namak-phi.vercel.app"><img src="docs/screenshots/0-welcome.jpg" width="860" alt="Namak's first screen: Your well is salty."></a>
+
+</div>
+
+<br>
+
+## At a glance
+
+| | |
+|---|---|
+| **The problem** | Desert farms water from salty wells. Every watering leaves salt in the soil, so farmers must pour extra water to wash it out — and they **guess** how much. |
+| **What Namak does** | Works out tomorrow’s exact minutes for every valve from the real weather forecast, the crop and the well’s saltiness — water for the plant **plus** just enough to wash the salt away. |
+| **Who it reaches** | The person who actually opens the valves: a hired worker, often in another language. Namak sends the plan as a **voice message in English, Hindi or Arabic**, written and voiced by Gemini. |
+| **The result** | Replayed on a real year of weather: **19 % less water**, palms too salty on **1 day instead of 120**, tomato yield **87 % → 100 %**. |
+| **What it costs** | A ~AED 100 salt meter (EC pen). No sensors, no subscription, works with no signal. |
+
+## The problem, from the start
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/0b-why-salt.jpg" alt="Salt piles up around the roots until the plant can't drink"></td>
+<td width="50%"><img src="docs/screenshots/0c-washed.jpg" alt="A little extra water washes the salt down past the roots"></td>
+</tr>
+<tr>
+<td><b>The water goes, the salt stays.</b> Plants drink the well water and the sun dries the soil, but the salt is left behind. Day after day it piles up around the roots until the plant can’t drink — even in wet soil — and the harvest shrinks.</td>
+<td><b>The fix is a little extra water</b> that soaks past the roots and carries the salt down. Too little and the salt comes back; too much wastes water the desert can’t spare. The right amount changes with the well, the crop and every day’s weather.</td>
+</tr>
+</table>
+
+Everyone asks *“how much water does the crop need?”* In the desert that is only half the question. Namak is built around
+three problems hidden inside it:
+
+1. **Salt is the hidden water cost.** The extra water needed to wash salt out — FAO’s *leaching requirement* — is real,
+   large and never calculated on the farm. On the example farm it is **2,230 m³ a year, almost a fifth of all its water.**
+2. **Salt builds up like a debt.** Watering by habit (the same minutes every day) over-waters in winter and under-washes in
+   summer, so salt accumulates for months. Namak keeps a running **Salt Debt** for each crop and pays it back on the
+   **coolest days of the week**, when plants drink least — timing the UN’s FAO explicitly recommends.
+3. **The decision-maker isn’t at the valve.** The owner plans; a hired worker opens the valves. Namak speaks to the
+   worker directly, by voice, in their language — and the worker closes the loop with one photo of a cheap salt meter.
+
+## What’s in the app
+
+<p align="center">
+<img src="docs/screenshots/1-tomorrow.jpg" width="190" alt="Plan: tomorrow's minutes per valve">&nbsp;
+<img src="docs/screenshots/2-habit-vs-namak.jpg" width="190" alt="Results: water saved">&nbsp;
+<img src="docs/screenshots/3-replay.jpg" width="190" alt="Results: last year replayed">&nbsp;
+<img src="docs/screenshots/4-worker.jpg" width="190" alt="AI assistant: the farmer's chat in Hindi">
 </p>
-<p>
-<img src="docs/screenshots/1-tomorrow.jpg" width="200" alt="Tomorrow screen: total watering time, habit vs Namak, send to worker">
-<img src="docs/screenshots/2-habit-vs-namak.jpg" width="200" alt="Habit vs Namak: salt costs this farm 2,230 m³ of water a year">
-<img src="docs/screenshots/3-replay.jpg" width="200" alt="Season replay on ERA5 weather: water and salt debt, habit vs Namak">
-<img src="docs/screenshots/4-worker.jpg" width="200" alt="AI assistant: the farmer’s chat with Namak, voice message in Hindi">
-</p>
-
----
-
-## The problem inside the problem
-
-Everyone asks *“how much water does the crop need?”* In the desert that is only half the question.
-
-1. **Salt is the hidden water cost.** Many desert wells are brackish. To stop salt building up, some water
-   must drain past the roots and carry the salt away — the *leaching requirement* (FAO-29). Growers guess it: too little
-   and the soil slowly poisons the crop; too much and the scarcest input on the farm is wasted. Nobody calculates it.
-2. **Salt Debt.** Every litre of brackish water leaves salt behind. Namak keeps a running balance of root-zone salt
-   against each crop’s tolerance — a debt — and schedules the repayment (extra leaching) on the coolest days of the week,
-   when the crop is using least water. FAO-29 explicitly supports this timing (see [Debt repayment](#debt-repayment-is-it-allowed)).
-3. **The decision-maker isn’t at the valve.** The owner decides; a hired worker — who may not read English — opens the
-   valves by habit (“45 minutes, every day”). Namak sends tomorrow’s exact minutes as a **voice note in the worker’s
-   language**, and the worker closes the loop by photographing a ~AED 100 EC pen. AI reads the display; the plan updates.
-
-## What it does (6 screens, mobile-first, no login)
-
-First visit opens the story page (“Your well is salty.”) with two buttons: **Watch the demo (60 s)** — a guided walkthrough
-that drives the real app by itself with plain-English captions (the slider moves, a meter photo is read and confirmed, the
-voice message plays; the farm is restored afterwards) — or **Explore on my own**. Scrolling down tells the story.
-The menu has four items: **Plan · Results · ✦ AI assistant · How it works** (farm settings behind the gear icon).
-Every screen explains the idea from scratch in everyday words; the technical maths sits behind “How we worked this out”.
-
 
 | Screen | What you see |
 |---|---|
-| **Plan** (tomorrow) | Total watering time, a card per valve (“Valve 1 · Palms · 95 min · 00:00 → 01:35”), one-line *why* (heat + salt), a Salt Debt gauge, blend advice, and the 7-day plan with repayment days marked. |
-| **Results · Water saved** | A year of real weather at the farm. Drag the **well-EC slider** and the salt water cost, water/AED saved and yield risk change live; when the water is too salty for a crop, Namak shows the RO/TSE **blend ratio**. |
-| **Results · Last year replayed** | Last year re-run day by day on **ERA5 reanalysis weather**: cumulative water and root-zone salt, habit vs Namak, animated. This is the proof that the decision beats the guess. |
-| **✦ AI assistant** | The farmer’s chat with Namak (Gemini) on a phone mock-up. Namak asks for a language (English, Hindi, Arabic; it replies in that language with an English line under it) → the farmer sends one of three example salt-meter photos → Gemini reads it → the farmer confirms → the plan recalculates with a visible before/after → Gemini writes tomorrow’s times in that language and sends them as a voice message. |
-| **Farm** (gear icon) | Location, well EC, blend water, valves (crop, plants, spacing, emitters, flow), soil test, the worker’s habit. Saved on the phone. |
-| **Why it works** | Sources, formulas, crop constants, real vs illustrative, limits, cost. |
+| **Story** (first screen) | “Your well is salty.” — a scroll-through explanation of the problem, with a 60-second **guided demo** that drives the real app by itself. |
+| **Plan** | Tomorrow’s total watering time and a card per valve (“Valve 1 · Palms · 95 min · 00:00 → 01:35”) with a one-line *why*, the Salt Debt gauge and the 7-day plan with repayment days marked. |
+| **Results · Water saved** | A real year at the farm. Drag the **well-salt slider** and watch the salt’s share of the water, the water and money saved and the yield risk change live; if the well is too salty for a crop, Namak suggests a blend with cleaner water. |
+| **Results · Last year replayed** | Last year re-run day by day on **ERA5 reanalysis weather**: water used and root-zone salt, habit vs Namak. The proof that the decision beats the guess. |
+| **✦ AI assistant** | The farmer’s chat with Namak on a phone: pick a language → send a photo of the salt meter → Gemini reads it → confirm → the plan recalculates (before/after shown) → Gemini writes tomorrow’s times in that language and sends them as a **voice message**. |
+| **How it works** | Sources, formulas, crop constants, what is real vs illustrative, limits and cost. |
+| **Farm** (gear icon) | Location, well salt level, valves, crops, emitters, soil test and the worker’s habit. Saved on the phone. |
 
-## Does the decision beat the guess?
+## Does it beat the guess?
 
-Illustrative demo farm near Al Ain (30 date palms, 1 000 m² fodder, 600 m² tomato; well 3.2 dS/m), replayed on **real
-ERA5 weather, 11 Nov 2025 – 10 Nov 2026** (tomato: its Oct–Mar season). Habit = the worker’s summer setting left on all year.
+An example farm near Al Ain (30 date palms, 1,000 m² fodder, 600 m² tomato; well 3.2 dS/m), replayed on **real ERA5
+weather, 11 Nov 2025 – 10 Nov 2026** (tomato: its Oct–Mar season). *Habit* = the worker’s summer setting left on all year.
 
 | | Habit | Namak |
-|---|---|---|
-| Water, whole farm, 12 months | 14 686 m³ | **11 904 m³ (−19 %, ≈ AED 4 170/yr)** |
-| Of which spent flushing salt | not budgeted | 2 230 m³ (the hidden cost, now visible) |
+|---|---:|---:|
+| Water, whole farm, 12 months | 14,686 m³ | **11,904 m³ (−19 %, ≈ AED 4,170 / yr)** |
+| Of which spent washing out salt | not budgeted | **2,230 m³** — the hidden cost, made visible |
 | Date palm: days with root-zone salt over the limit | 120 | **1** |
 | Fodder: days over the limit | 89 | **0** |
-| Tomato: salt-limited yield | 87 % | **100 %** (needs 36 % RO water in the blend; uses ~2 % more water than habit) |
+| Tomato: salt-limited yield | 87 % | **100 %** |
 
-These numbers are asserted in [`src/engine/demo-claims.test.ts`](src/engine/demo-claims.test.ts) so they cannot drift
-silently. Namak is **not** always the lower-water option: on the salt-sensitive tomato it spends slightly more water and
-saves the crop. That is the point — water goes where the salt demands it, not where habit puts it.
+These numbers are asserted in [`src/engine/demo-claims.test.ts`](src/engine/demo-claims.test.ts), so they cannot drift.
+Namak is **not** always the lower-water option: for the salt-sensitive tomato it uses ~2 % *more* water (with 36 %
+cleaner RO water in the blend) and saves the crop. Water goes where the salt demands it, not where habit puts it.
 
 ## How it works
 
@@ -77,7 +109,7 @@ flowchart LR
     E[ERA5 via Open-Meteo<br/>last ~13 months]
     W[Well EC<br/>pen photo or manual]
   end
-  subgraph Engine["src/engine (pure TypeScript, 79 tests)"]
+  subgraph Engine["src/engine (pure TypeScript, 84 tests)"]
     K[Kc by stage + climate<br/>FAO-56 T11/T12, eq. 62]
     L[Leaching fraction<br/>FAO-29 four-layer method]
     S[Salt Debt<br/>FAO-61 Annex 4 salt storage]
@@ -92,12 +124,56 @@ flowchart LR
   E --> P
   W --> L --> P
   S <--> P
-  P --> UI[PWA: Tomorrow · Compare · Replay · Worker]
+  P --> UI[PWA: Plan · Results · AI assistant]
   UI --> I --> V
   UI -->|photo| R -->|confirmed| W
 ```
 
-### Formulas (units: mm over crop area, 1 mm on 1 m² = 1 L; EC in dS/m)
+- **Engine** — pure TypeScript in [`src/engine`](src/engine): crop water need (FAO-56), the leaching fraction (FAO-29),
+  a daily root-zone salt balance (FAO-61) and a planner that repays the salt debt on the lowest-evaporation days. Every
+  crop constant cites its FAO table; 84 tests include FAO’s own worked examples.
+- **Data** — the Open-Meteo forecast and ERA5 history. A recorded snapshot is bundled, so every screen works offline and
+  the demo shows the same numbers every day.
+- **AI** — three small server-side routes on Vercel. The engine decides the minutes; AI only translates, speaks and reads
+  a meter display.
+
+## How AI is used — Google Gemini, server-side only
+
+| Route | Model | What it does | Guard rails |
+|---|---|---|---|
+| `/api/instruct` | `gemini-4-hydrogen` | Turns the plan into two short sentences in the worker’s language | Every minute and start time is checked against the plan; any mismatch, timeout or no signal → a fixed template |
+| `/api/voice` | `gemini-3.8-flash-lite-tts` | Reads those sentences aloud as a voice message | Cached on the phone; fallback: the phone’s own voice |
+| `/api/read-ec` | `gemini-4-hydrogen` (vision, strict JSON) | Reads the number and unit off a salt-meter photo | Units converted (mS/cm = dS/m, µS/cm ÷ 1000), only 0–20 dS/m accepted, the farmer confirms before anything changes |
+
+The API key lives only in Vercel’s environment; per-IP limits and a daily cap protect it. Gemini’s output for the demo
+(9 voice messages in 3 languages and the readings of the 3 example meter photos) was generated once and is reused from
+[`public/demo`](public/demo) and [`src/data/demoAssets.json`](src/data/demoAssets.json) — the guided demo makes **no AI
+calls**, and a test fails if an engine change ever makes a saved message disagree with the plan.
+
+## Built for the desert
+
+- **Saves water** — −19 % on the example farm over a real year, with the salt share of every litre made visible.
+- **Weak signal, little time** — an installable web app that works fully offline after one visit (“Offline — plan synced …”
+  banner). One sync a week covers a 7-day plan. The worker needs no reading and no app: just a voice message.
+- **Affordable** — a ~AED 100 EC pen is the only hardware. AI calls are tiny and capped.
+
+## What is real, what is illustrative
+
+| Real | Illustrative |
+|---|---|
+| 7-day forecast: Open-Meteo (ET0, max temperature, min humidity, wind, sunrise) | The example farm’s layout, crops, emitters and the worker’s habit |
+| Historical weather: ERA5 reanalysis via Open-Meteo | Well salt level (3.2 dS/m) and soil tests |
+| FAO crop and salt constants and equations | Water price (AED 1.5 / m³) and the clean-water blend source |
+| Gemini’s messages, voices and meter readings | The three example meter photos are drawings made for the demo |
+
+Every number in the app carries a source label (“Live forecast · Open-Meteo”, “Historical weather · ERA5”, “Illustrative well EC”).
+
+<details>
+<summary><b>The science in detail — formulas, FAO validation, debt repayment, crop constants</b></summary>
+
+<br>
+
+#### Formulas (units: mm over crop area, 1 mm on 1 m² = 1 L; EC in dS/m)
 
 | Step | Formula | Source |
 |---|---|---|
@@ -123,7 +199,7 @@ for every crop.
 crop limit (≈ 4.5 vs 4.0 dS/m for palms at 3.2 dS/m water). Namak uses FAO-29’s more exact four-layer method so the
 daily plan and the debt model agree; eq. 9 is still computed and shown for comparison.
 
-### Debt repayment: is it allowed?
+#### Debt repayment: is it allowed?
 
 Yes. FAO-29 §2.4.2: leaching *“can be done at each irrigation, each alternate irrigation or less frequently, such as
 seasonally … as necessary to keep salinity below the threshold”*, and *“schedule leachings at periods of low crop water
@@ -134,7 +210,7 @@ doubling a day’s water so no valve is flooded.
 Valves run one after another (one pump) at night, finishing by sunrise. Night/pre-dawn timing is a design choice, not an
 FAO number: evaporation and wind losses are lowest and the water is in the root zone before the afternoon peak.
 
-### Crop constants (all read from the primary FAO pages on 16 Nov 2026)
+#### Crop constants (all read from the primary FAO pages on 16 Nov 2026)
 
 | Crop | Kc ini / mid / end (FAO-56 T12) | Stages, days (FAO-56 T11) | Root depth used, m (T22) | ECe 100 % / 90 % / 0 % (FAO-29 T4) | b, %/dS·m⁻¹ (FAO-56 T23) |
 |---|---|---|---|---|---|
@@ -149,58 +225,12 @@ Other constants: sand field capacity θFC = 0.12 (FAO-56 Table 19 midpoint of 0.
 table; it is editable in Farm setup. Rhodes grass (the usual UAE fodder) is in neither FAO salt table, so Bermuda grass,
 the nearest listed fodder grass, stands in for it.
 
-## Data: what is real, what is illustrative
+</details>
 
-| Real | Illustrative |
-|---|---|
-| 7-day forecast: Open-Meteo (`et0_fao_evapotranspiration`, `temperature_2m_max`, `relative_humidity_2m_min`, `wind_speed_10m_mean`, `sunrise`) | The demo farm’s layout, crops, emitters and the worker’s habit |
-| Historical weather: ERA5 reanalysis via Open-Meteo Archive API (`models=era5`) | Well EC (3.2 dS/m) and soil tests |
-| FAO crop and salt constants, FAO equations | Water price (AED 1.5/m³) and the RO blend water EC |
-| Gemini output (instructions, voice, EC reading) | The three sample EC-pen photos are drawings made for the demo |
+<details>
+<summary><b>Assumptions & limitations</b></summary>
 
-Every number in the UI carries a source tag (“Live forecast · Open-Meteo”, “Historical weather · ERA5 via Open-Meteo”,
-“Illustrative well EC”). A real-weather snapshot for the demo location is bundled so the demo works with no network.
-
-## Desert rules
-
-- **Water:** −19 % on the demo farm over a real year, and the salt share of every litre is made visible and budgeted.
-- **Weak connectivity, little time:** installable PWA; after one load every screen works offline with an
-  “Offline — plan synced …” banner; the last forecast, instructions and recorded voice notes are cached. One sync a week
-  is enough to keep a 7-day plan. The worker needs no reading and no app — a voice note.
-- **Affordable:** an EC pen (~AED 100) is the only hardware. No sensors, no subscription. AI calls are small (two sentences, a few seconds of
-  audio, one photo) and capped per day.
-
-## How AI is used (Gemini, server-side only)
-
-| Route | Model | Does | Guard rails |
-|---|---|---|---|
-| `/api/instruct` | `gemini-4-hydrogen` (thinking: low) | Plan → 2 sentences in the worker’s language | Every minute and start time is checked against the plan; if anything differs, too slow or offline → deterministic template |
-| `/api/voice` | `gemini-3.8-flash-lite-tts` | Text → voice message (WAV) | Generated only when someone presses Send, then cached on the device; fallback: the phone’s own voice |
-| `/api/read-ec` | `gemini-4-hydrogen` vision, strict JSON schema | Photo → value + unit | mS/cm = dS/m, µS/cm ÷ 1000, ppm rejected, 0–20 dS/m only. The app’s three example photos use readings this model produced once (saved in `src/data/demoAssets.json`) |
-
-The key lives only in Vercel’s environment (`GEMINI_API_KEY`); per-IP limits and a daily cap protect the quota. Model IDs
-and request formats were taken from Google’s docs on 16 Nov 2026 (Interactions API, `Api-Revision: 2026-05-20`).
-The AI never decides minutes: the engine does; AI only translates, speaks and reads a display.
-
-**All saved AI output lives in one place and is reused every day:**
-
-| What | Where |
-|---|---|
-| Gemini’s voice messages (3 example readings × English, Hindi, Arabic = 9 files, 1.3 MB) | `public/demo/voice-<reading>-<lang>.m4a` |
-| Their text, the plans they were made for, and Gemini’s readings of the three example meter photos | `src/data/demoAssets.json` |
-| The recorded real weather the site uses by default (forecast for 17 Nov 2026, ERA5 year to 10 Nov 2026) | `src/data/snapshot-forecast.json`, `src/data/snapshot-era5.json` |
-
-Re-running `scripts/make-demo-assets.mts` reuses every saved file whose plan has not changed, so it never pays twice.
-With the recorded weather (the default) the site makes no AI calls at all. Live mode is capped at 60 AI calls a day
-and shares each answer through Vercel’s CDN for 24 hours.
-
-**Generated once, reused:** the guided demo runs on a fixed *demo day* (the real forecast recorded on 16 Nov 2026). Its worker
-messages in all three languages, their voice recordings and the readings of the three example meter photos were produced once
-by Gemini (`scripts/make-demo-assets.mts`) and saved in the repo (`public/demo/`, `src/data/demoAssets.json`). The demo makes
-no AI calls, always shows the same result, and a test fails if an engine change ever makes the saved messages disagree with
-the plan. Outside the demo, a live message is generated only when someone presses *Send*, and is cached.
-
-## Assumptions & limitations
+<br>
 
 - Salt model: complete mixing within four root-zone layers, 40-30-20-10 % uptake, no capillary rise, adequate drainage,
   no salt from fertiliser or rain, no precipitation/dissolution chemistry; daily time step; soil back at field capacity
@@ -212,26 +242,20 @@ the plan. Outside the demo, a live message is generated only when someone presse
 - The demo farm is illustrative and has not been field-validated. Non-English templates have not yet been checked by
   native speakers.
 
-## Run it
+</details>
+
+## Run it locally
 
 ```bash
 npm install
-npm test            # 79 tests: engine, FAO cross-checks, demo claims, weather fallback, instruction checks
-npm run dev         # UI on http://localhost:5173 (AI routes need vercel dev)
+npm test        # 84 tests: engine, FAO cross-checks, demo claims, weather fallback, instruction checks
+npm run dev     # http://localhost:5173 (AI routes need `vercel dev` and a GEMINI_API_KEY in .env.local)
 ```
 
-With the AI routes:
+`scripts/` holds the data tools: `snapshot-weather.mjs` records the bundled weather, `make-demo-assets.mts` generates
+the saved Gemini output (reusing anything that hasn’t changed), and `warm-cache.mts` pre-fills the live AI cache.
 
-```bash
-echo "GEMINI_API_KEY=..." > .env.local         # never commit; .env* is git-ignored
-set -a; . ./.env.local; set +a; vercel dev
-```
-
-Deploy: `vercel env add GEMINI_API_KEY production`, then `vercel --prod`. Refresh the bundled weather snapshot with
-`node scripts/snapshot-weather.mjs`; regenerate the saved demo AI content with `npx tsx scripts/make-demo-assets.mts` (needs `GEMINI_API_KEY`).
-
-**Stack:** Vite · React 19 · TypeScript · Tailwind v4 · Motion (animation) · Recharts · vite-plugin-pwa · Vitest · Vercel functions · Gemini.
-Type: the device's system font (SF Pro on Apple devices), Inter elsewhere. All animation respects `prefers-reduced-motion`.
+**Stack:** Vite · React 19 · TypeScript · Tailwind CSS v4 · Motion · vite-plugin-pwa · Vitest · Vercel Functions · Google Gemini · Open-Meteo
 
 ## Sources
 
@@ -244,3 +268,12 @@ Type: the device's system font (SF Pro on Apple devices), Inter elsewhere. All a
 ## How this was built
 
 Built solo by **Aryesh Biswas** within the hackathon window, 16–17 Nov 2026 (see the commit history).
+
+<div align="center">
+<br>
+
+**[Open Namak → namak-phi.vercel.app](https://namak-phi.vercel.app)**
+
+*Pay the salt debt. Not the water bill.*
+
+</div>

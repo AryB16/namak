@@ -29,3 +29,8 @@ dist-ssr
 !.env.example
 .vercel
 coverage
+
+# Personal working notes (kept locally, not part of the submission)
+DEMO_SCRIPT.md
+PITCH.md
+SUBMISSION.md
