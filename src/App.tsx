@@ -20,11 +20,11 @@ const Why = lazy(() => import('./screens/Why'))
 type Route = 'welcome' | 'tour' | 'tomorrow' | 'compare' | 'replay' | 'worker' | 'farm' | 'why'
 
 const TABS: { id: Route; label: string; short: string; Icon: ComponentType<{ className?: string }> }[] = [
-  { id: 'tomorrow', label: 'Tomorrow', short: 'Tomorrow', Icon: IconTomorrow },
-  { id: 'compare', label: 'Habit vs Namak', short: 'vs Habit', Icon: IconCompare },
-  { id: 'replay', label: 'Season Replay', short: 'Replay', Icon: IconReplay },
-  { id: 'worker', label: 'Worker', short: 'Worker', Icon: IconWorker },
-  { id: 'farm', label: 'Farm', short: 'Farm', Icon: IconFarm },
+  { id: 'tomorrow', label: 'Tomorrow’s plan', short: 'Plan', Icon: IconTomorrow },
+  { id: 'compare', label: 'Water saved', short: 'Savings', Icon: IconCompare },
+  { id: 'replay', label: 'Last year replayed', short: 'Proof', Icon: IconReplay },
+  { id: 'worker', label: 'The worker', short: 'Worker', Icon: IconWorker },
+  { id: 'farm', label: 'Farm settings', short: 'Farm', Icon: IconFarm },
 ]
 
 const ROUTES: Route[] = ['welcome', 'tour', 'tomorrow', 'compare', 'replay', 'worker', 'farm', 'why']
@@ -93,32 +93,32 @@ export default function App() {
     )
 
   return (
-    <div className="min-h-dvh pb-[calc(84px+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="min-h-dvh pb-[calc(84px+env(safe-area-inset-bottom))] lg:pb-0">
       <Backdrop />
       <StatusBanner />
       <header className="sticky top-0 z-30 border-b border-black/[0.08] bg-[rgba(251,251,253,0.72)] backdrop-blur-xl backdrop-saturate-[1.8]">
         <div className="mx-auto flex h-14 max-w-[1080px] items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex items-center gap-3">
             <Logo />
-            <span className="hidden text-[12px] text-ink/65 lg:inline">
+            <span className="hidden text-[12px] text-ink/65 xl:inline">
               {farm.name} · {farm.place}
             </span>
           </div>
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
-            {[...TABS, { id: 'why' as Route, label: 'Why it works', short: 'Why', Icon: IconTomorrow }].map((t) => (
+          <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Main">
+            {[...TABS, { id: 'why' as Route, label: 'How it works', short: 'How', Icon: IconTomorrow }].map((t) => (
               <a
                 key={t.id}
                 href={`#${t.id}`}
                 aria-current={route === t.id ? 'page' : undefined}
-                className={`rounded-full px-3 py-2 text-[13px] font-medium transition-colors duration-300 ${route === t.id ? 'bg-black/[0.06] text-ink' : 'text-ink/65 hover:bg-black/[0.03] hover:text-ink'}`}
+                className={`whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-medium transition-colors duration-300 ${route === t.id ? 'bg-black/[0.06] text-ink' : 'text-ink/65 hover:bg-black/[0.03] hover:text-ink'}`}
               >
                 {t.label}
               </a>
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <a href="#why" className="inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-ink/70 md:hidden">
-              Why it works
+            <a href="#why" className="inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-ink/70 lg:hidden">
+              How it works
             </a>
             <a href="#tour" className="hidden min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-ink/70 hover:text-ink sm:inline-flex">
               Story
@@ -152,13 +152,13 @@ export default function App() {
         </m.main>
       </AnimatePresence>
 
-      <footer className="mx-auto hidden max-w-[1080px] px-6 pb-10 text-[12px] text-ink/65 md:block">
+      <footer className="mx-auto hidden max-w-[1080px] px-6 pb-10 text-[12px] text-ink/65 lg:block">
         Weather: Open-Meteo (live forecast, ERA5 history). Crop and salt science: FAO Irrigation & Drainage Papers 29, 56, 61.
         Demo farm, well EC and prices are illustrative.
       </footer>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-black/[0.08] bg-[rgba(251,251,253,0.8)] pb-[env(safe-area-inset-bottom)] backdrop-blur-xl backdrop-saturate-[1.8] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-black/[0.08] bg-[rgba(251,251,253,0.8)] pb-[env(safe-area-inset-bottom)] backdrop-blur-xl backdrop-saturate-[1.8] lg:hidden"
         aria-label="Main"
       >
         <ul className="grid grid-cols-5">

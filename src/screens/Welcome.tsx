@@ -30,8 +30,8 @@ export default function Welcome() {
         <span className="bg-gradient-to-r from-glow-water to-[#b7f0e8] bg-clip-text text-transparent">for salty wells.</span>
       </m.h1>
       <m.p {...item(0.35)} className="mt-6 max-w-[560px] text-[19px] leading-snug text-white/70 md:text-[22px]">
-        Namak tells the farm worker exactly how long to open each valve tomorrow — using less water and keeping salt out of
-        the soil.
+        Desert farms water their crops from salty wells. Namak works out how long to water each part of the farm tomorrow —
+        using less water and keeping salt out of the soil — and tells the farm worker by voice.
       </m.p>
 
       <m.div {...item(0.5)} className="mt-10 flex w-full max-w-[520px] flex-col gap-3 sm:flex-row sm:justify-center">

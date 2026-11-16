@@ -37,3 +37,27 @@ describe('demo farm on a real year of Al Ain weather', () => {
     expect(Math.max(...palms.r.namak.map((d) => d.eceEnd))).toBeLessThan(4.2)
   })
 })
+
+import demoAssets from '../data/demoAssets.json'
+import fc from '../data/snapshot-forecast.json'
+import { planFarm } from './farm'
+import { instructionPlan } from '../lib/worker'
+import { instructionMatchesPlan, LANGS } from '../lib/instruction'
+
+describe('saved demo AI content', () => {
+  const days = (fc.days as WeatherDay[]).filter((d) => d.date >= demoAssets.demoDay).slice(0, 7)
+  const plan = instructionPlan(planFarm(DEMO_FARM, days))
+  it('matches the plan the engine makes today for the demo day (else re-run scripts/make-demo-assets.mts)', () => {
+    expect(plan).toEqual(demoAssets.plan)
+  })
+  it('has a message for every language, and every message carries the plan’s exact numbers', () => {
+    for (const l of LANGS) {
+      const v = (demoAssets.voice as Record<string, { text: string }>)[l.id]
+      expect(v).toBeTruthy()
+      expect(instructionMatchesPlan(v.text, plan)).toBe(true)
+    }
+  })
+  it('has a saved reading for each example photo, in range', () => {
+    for (const r of Object.values(demoAssets.readings)) expect(r.ec).toBeGreaterThan(0)
+  })
+})

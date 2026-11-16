@@ -8,7 +8,7 @@ export const GLOSSARY: Record<string, string> = {
     'Salty water leaves a little salt in the soil every day. Like a debt, it builds up. It has to be “paid back” by washing it below the roots with extra water.',
   'dS/m':
     'deciSiemens per metre — the unit for how salty water or soil is. Higher means saltier. Water under 0.7 counts as fresh for farming (UN FAO).',
-  valve: 'A tap on the farm’s pipe network. Each valve waters one block of crops through small drippers.',
+  valve: 'A tap on the farm’s water pipes. Opening it sends water to one part of the farm, where small drippers water each plant.',
   'salt meter':
     'An EC pen: a pocket meter (about AED 100) that measures how salty water is. You dip it in a cup of well water and read the number.',
   'safe level': 'The most salt this crop can take in its root soil before it starts to grow less (from UN FAO research).',
@@ -59,8 +59,8 @@ const STEPS = [
         <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
       </svg>
     ),
-    title: 'Checks tomorrow’s weather',
-    body: 'Hotter, windier days make plants thirstier. Namak reads the live forecast for the farm.',
+    title: 'It checks tomorrow’s weather',
+    body: 'Hot, dry and windy days make plants thirsty. Namak uses the weather forecast for the farm’s location.',
   },
   {
     icon: (
@@ -69,8 +69,8 @@ const STEPS = [
         <path d="M9 15h6" />
       </svg>
     ),
-    title: 'Adds just enough to wash out salt',
-    body: 'Well water here is salty. A little extra water carries the salt below the roots — not too little, not too much.',
+    title: 'It adds just enough water to wash out salt',
+    body: 'The well water here is salty. Plants drink the water but leave the salt in the soil. A little extra water washes it down, below the roots.',
   },
   {
     icon: (
@@ -79,14 +79,16 @@ const STEPS = [
         <path d="M9.5 13.5c1-1.5 1.5-1.5 2.5 0s1.5 1.5 2.5 0" />
       </svg>
     ),
-    title: 'Tells the worker, by voice',
-    body: 'The person who opens the taps gets the exact minutes as a voice note, in their own language.',
+    title: 'It tells the worker by voice',
+    body: 'The person who turns the valves on gets the exact minutes as a short voice message in their own language.',
   },
 ]
 
 /** “How Namak works” — three steps for someone who has never heard of the idea. */
 export function HowItWorks() {
   return (
+    <section aria-labelledby="how-title">
+    <h2 id="how-title" className="mb-3 text-[20px] font-semibold">How Namak works, in three steps</h2>
     <Stagger className="grid gap-3 md:grid-cols-3">
       {STEPS.map((s, i) => (
         <StaggerItem key={s.title} className="glass flex gap-4 rounded-[24px] p-5">
@@ -99,6 +101,7 @@ export function HowItWorks() {
         </StaggerItem>
       ))}
     </Stagger>
+    </section>
   )
 }
 

@@ -109,7 +109,7 @@ export default function Replay() {
   return (
     <div className="space-y-5">
       <div>
-        <Eyebrow>Proof · does it really work?</Eyebrow>
+        <Eyebrow>Proof: does it really work?</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">
           Last year, replayed with real weather.
         </h1>
@@ -118,7 +118,7 @@ export default function Replay() {
           habit, once with Namak’s plan. Press play and watch what happens to the water and to the salt in the soil.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <SourceTag>Real weather · ERA5 satellite-based record</SourceTag>
+          <SourceTag>Real weather from ERA5, a scientific weather record</SourceTag>
           <SourceTag tone="sand">
             {monthYear(full[0].date)} – {monthYear(full[full.length - 1].date)}
           </SourceTag>
@@ -206,22 +206,22 @@ export default function Replay() {
       <div className={`grid grid-cols-2 gap-3 transition-opacity duration-500 ${done ? 'opacity-100' : 'opacity-40'}`} aria-live="polite">
         <Verdict
           big={`${savedM3 >= 0 ? '' : '+'}${int(Math.abs(savedM3))} m³`}
-          label={savedM3 >= 0 ? 'less water than habit' : 'more water than habit'}
+          label={savedM3 >= 0 ? 'less water than the usual routine' : 'more water than the usual routine'}
           sub={savedM3 >= 0 ? `${int((savedM3 / (result.th.litres / 1000)) * 100)}% saved · AED ${int(savedM3 * farm.waterCostAedM3)}` : 'spent to keep salt off the roots'}
           tone={savedM3 >= 0 ? 'teal' : 'amber'}
         />
         {result.tn.yieldPct - result.th.yieldPct >= 1 ? (
           <Verdict
             big={`${int(result.th.yieldPct)}% → ${int(result.tn.yieldPct)}%`}
-            label="harvest, usual habit → Namak"
-            sub={`days over the salt limit: habit ${result.habitOver}, Namak ${result.namakOver}`}
+            label="harvest: usual routine → Namak"
+            sub={`days the soil was too salty: routine ${result.habitOver}, Namak ${result.namakOver}`}
             tone="red"
           />
         ) : (
           <Verdict
             big={`${result.habitOver} → ${result.namakOver}`}
-            label="days the soil was too salty, habit → Namak"
-            sub={`season yield: habit ${int(result.th.yieldPct)}%, Namak ${int(result.tn.yieldPct)}%`}
+            label="days the soil was too salty: usual routine → Namak"
+            sub={`harvest: routine ${int(result.th.yieldPct)}%, Namak ${int(result.tn.yieldPct)}%`}
             tone={result.habitOver > result.namakOver ? 'red' : 'teal'}
           />
         )}

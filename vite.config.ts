@@ -28,14 +28,14 @@ export default defineConfig({
       },
       workbox: {
         // App shell, every screen chunk, fonts and sample photos: works offline after one load. The recorded voice
-        // notes (~700 KB) are cached the first time they are played instead of being downloaded up front.
+        // notes in /demo (~700 KB) are cached the first time they are played instead of being downloaded up front.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.startsWith('/audio/'),
+            urlPattern: ({ url }) => url.pathname.startsWith('/demo/'),
             handler: 'CacheFirst',
             options: { cacheName: 'voice-samples', expiration: { maxEntries: 10 }, cacheableResponse: { statuses: [0, 200] } },
           },

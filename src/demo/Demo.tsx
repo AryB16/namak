@@ -8,6 +8,7 @@ import { EASE } from '../components/motion'
 import { markToured } from '../lib/tour'
 import { useApp } from '../state'
 import type { Farm } from '../engine/plan'
+import { DEMO_FARM } from '../data/demoFarm'
 
 export type DemoEventType = 'sweep-slider' | 'send-note' | 'read-sample' | 'play-replay'
 
@@ -38,13 +39,13 @@ interface Step {
 }
 
 export const STEPS: Step[] = [
-  { route: 'tomorrow', target: 'hero', caption: 'This is tomorrow’s watering plan for a small farm near Al Ain — worked out from the live weather forecast.', ms: 6500 },
-  { route: 'tomorrow', target: 'valves', caption: 'Each valve gets exact minutes: enough water for the crop, plus a little extra to wash the salt down.', ms: 6500 },
-  { route: 'compare', target: 'slider', caption: 'The well water is salty. Watch what happens as it gets saltier — more water is needed just to flush the salt.', ms: 9000, event: 'sweep-slider', eventDelay: 900 },
-  { route: 'compare', target: 'counters', caption: 'Over a real year, Namak uses about 19% less water than the worker’s fixed habit — and keeps every crop healthy.', ms: 6000 },
-  { route: 'replay', target: 'replay-chart', caption: 'Last year, replayed with real weather. Orange is the habit, teal is Namak. The habit lets salt pile up all summer.', ms: 9000, event: 'play-replay', eventDelay: 300 },
-  { route: 'worker', target: 'phone', caption: 'The worker gets the plan as a voice note in their own language — no reading needed.', ms: 9000, event: 'send-note', eventDelay: 700 },
-  { route: 'worker', target: 'ec', caption: 'They send back a photo of a cheap salt meter. AI reads the number, the owner confirms, and tomorrow’s plan updates.', ms: 13000, event: 'read-sample', eventDelay: 700 },
+  { route: 'tomorrow', target: 'hero', caption: 'This is tomorrow’s watering plan for an example farm near Al Ain. Namak works it out from the weather forecast.', ms: 6500 },
+  { route: 'tomorrow', target: 'valves', caption: 'Each valve is a tap that waters one part of the farm. Namak gives each one exact minutes: enough for the plants, plus a little extra to wash away salt.', ms: 6500 },
+  { route: 'compare', target: 'slider', caption: 'The well water here is salty. Watch what happens as it gets saltier: more and more water is needed just to wash the salt away.', ms: 9000, event: 'sweep-slider', eventDelay: 900 },
+  { route: 'compare', target: 'counters', caption: 'Over a real year, Namak uses about 19% less water than the worker’s usual routine, and keeps every crop healthy.', ms: 6000 },
+  { route: 'replay', target: 'replay-chart', caption: 'We replayed last year with real weather. Orange is the usual routine and teal is Namak. With the routine, salt piles up in the soil all summer.', ms: 9000, event: 'play-replay', eventDelay: 300 },
+  { route: 'worker', target: 'phone', caption: 'The worker gets the plan as a short voice message in their own language, so no reading is needed.', ms: 9000, event: 'send-note', eventDelay: 700 },
+  { route: 'worker', target: 'ec', caption: 'Once a week the worker sends a photo of a cheap salt meter. AI reads the number, the owner confirms it, and the plan updates.', ms: 13000, event: 'read-sample', eventDelay: 700 },
 ]
 
 interface DemoCtx {
@@ -61,7 +62,7 @@ function clearHighlights() {
 }
 
 export function DemoProvider({ children }: { children: ReactNode }) {
-  const { farm, setFarm, planDays, online } = useApp()
+  const { farm, setFarm, setDemoDay } = useApp()
   const [running, setRunning] = useState(false)
   const [step, setStep] = useState(0)
   const [paused, setPaused] = useState(false)
@@ -70,28 +71,21 @@ export function DemoProvider({ children }: { children: ReactNode }) {
 
   const start = useCallback(() => {
     markToured()
-    // Prepare the worker's voice note now, so it is ready when the demo reaches the Worker screen (~30 s later).
-    if (online && planDays.length)
-      void Promise.all([import('../engine/farm'), import('../lib/worker')]).then(([f, w]) => {
-        let lang: 'en' | 'ar' | 'hi' | 'ur' | 'ml' = 'hi'
-        try {
-          lang = (localStorage.getItem('namak.lang') as typeof lang) || 'hi'
-        } catch {
-          /* ignore */
-        }
-        return w.prepareNote(w.instructionPlan(f.planFarm(farm, planDays)), lang, online)
-      })
     if (!snapshot.current) snapshot.current = farm
+    // Run on the demo farm and the recorded demo day, so every number matches the saved AI voice messages.
+    setFarm(DEMO_FARM)
+    setDemoDay(true)
     setFinished(false)
     setPaused(false)
     setStep(0)
     setRunning(true)
-  }, [farm, online, planDays])
+  }, [farm, setFarm, setDemoDay])
 
   const restore = useCallback(() => {
+    setDemoDay(false)
     if (snapshot.current) setFarm(snapshot.current)
     snapshot.current = null
-  }, [setFarm])
+  }, [setFarm, setDemoDay])
 
   const stop = useCallback(() => {
     clearHighlights()
@@ -175,7 +169,7 @@ function DemoBar({ step, paused, onPause, onNext, onExit }: { step: number; paus
     <m.div
       role="dialog"
       aria-label="Guided demo"
-      className="fixed inset-x-3 bottom-[calc(76px+env(safe-area-inset-bottom))] z-50 mx-auto max-w-[620px] md:inset-x-auto md:right-6 md:bottom-6 md:w-[420px]"
+      className="fixed inset-x-3 bottom-[calc(76px+env(safe-area-inset-bottom))] z-50 mx-auto max-w-[620px] lg:inset-x-auto lg:right-6 lg:bottom-6 lg:w-[420px]"
       initial={{ opacity: 0, y: 30, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 30 }}

@@ -32,6 +32,8 @@ export function cachedInstruction(p: InstructionPlan, lang: Lang): Instruction |
 }
 
 export async function fetchInstruction(p: InstructionPlan, lang: Lang): Promise<Instruction> {
+  const saved = cachedInstruction(p, lang)
+  if (saved && saved.source === 'gemini') return saved // written once for this plan + language: reuse it
   const fallback: Instruction = { text: templateInstruction(p, lang), source: 'template', note: 'Offline template' }
   try {
     const ctrl = new AbortController()
@@ -59,8 +61,26 @@ export async function fetchInstruction(p: InstructionPlan, lang: Lang): Promise<
 
 export type VoiceSource = 'gemini' | 'browser' | 'sample' | 'none'
 
-/** Gemini TTS via /api/voice. Returns an object URL, or null if unavailable. */
+const VOICE_CACHE = 'namak-voice-v1'
+
+function voiceKey(text: string, lang: Lang): string {
+  let h = 2166136261
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619) >>> 0
+  return `/__voice-cache/${lang}/${h.toString(16)}`
+}
+
+/**
+ * Gemini TTS via /api/voice. Returns an object URL, or null if unavailable.
+ * Each message is generated once and kept in Cache Storage, so the same text is never sent to the AI twice.
+ */
 export async function fetchVoice(text: string, lang: Lang): Promise<string | null> {
+  const key = voiceKey(text, lang)
+  try {
+    const hit = 'caches' in window ? await (await caches.open(VOICE_CACHE)).match(key) : undefined
+    if (hit) return URL.createObjectURL(await hit.blob())
+  } catch {
+    /* cache unavailable: fall through to the network */
+  }
   try {
     const ctrl = new AbortController()
     const t = setTimeout(() => ctrl.abort(), 50_000)
@@ -72,7 +92,13 @@ export async function fetchVoice(text: string, lang: Lang): Promise<string | nul
     })
     clearTimeout(t)
     if (!res.ok || !(res.headers.get('content-type') || '').startsWith('audio/')) return null
-    return URL.createObjectURL(await res.blob())
+    const blob = await res.blob()
+    try {
+      if ('caches' in window) await (await caches.open(VOICE_CACHE)).put(key, new Response(blob, { headers: { 'Content-Type': blob.type } }))
+    } catch {
+      /* ignore */
+    }
+    return URL.createObjectURL(blob)
   } catch {
     return null
   }

@@ -14,7 +14,7 @@ import { useApp } from '../state'
 const VALVE_COLORS = ['#0a6f69', '#5fb8ad', '#7cc4ff', '#9b8cff', '#f2a65a']
 
 export default function Tomorrow() {
-  const { farm, planDays, forecast, online } = useApp()
+  const { farm, planDays, forecast, online, demoDay } = useApp()
   const plan = useMemo(() => (planDays.length ? planFarm(farm, planDays) : null), [farm, planDays])
 
   if (!plan) return <SkeletonTomorrow />
@@ -39,10 +39,16 @@ export default function Tomorrow() {
           <h1 className="text-[40px] leading-[1.05] font-semibold md:text-[56px]">Tomorrow’s watering plan</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <SourceTag>{live ? 'Live weather forecast' : 'Saved weather forecast'}</SourceTag>
+          <SourceTag>{demoDay ? 'Demo day: recorded forecast' : live ? 'Live weather forecast' : 'Saved weather forecast'}</SourceTag>
           <SourceTag tone="sand">Example farm</SourceTag>
         </div>
       </div>
+
+      <p className="-mt-2 max-w-[780px] text-[16px] leading-relaxed text-ink/75">
+        This is an example farm near Al Ain in the UAE. It grows date palms, animal fodder and tomatoes, and waters them through
+        drip pipes. Each part of the farm has its own <Term k="valve">valve</Term> — a tap that turns the water on for that part.
+        Namak works out how long each valve should stay open tomorrow.
+      </p>
 
       <HowItWorks />
 
@@ -78,7 +84,7 @@ export default function Tomorrow() {
 
             <div className="rounded-[24px] bg-white/[0.06] p-5 ring-1 ring-white/10 md:p-6">
               <p className="mb-4 text-[13px] text-white/60">Compared with what the worker usually does</p>
-              <CompareBar label="Usual habit (same every day)" min={habitMin} l={habitL} max={Math.max(habitMin, totalMin)} tone="habit" />
+              <CompareBar label="The worker’s usual routine (same every day)" min={habitMin} l={habitL} max={Math.max(habitMin, totalMin)} tone="habit" />
               <CompareBar label="Namak’s plan" min={totalMin} l={namakL} max={Math.max(habitMin, totalMin)} tone="namak" />
               <div className="mt-5 border-t border-white/10 pt-5">
                 <p className="text-[13px] font-medium text-white/60">{saved >= 0 ? 'Water saved tomorrow' : 'Extra water tomorrow'}</p>
@@ -97,8 +103,11 @@ export default function Tomorrow() {
       </div>
 
       <div>
-        <h2 className="mb-1 text-[28px] font-semibold md:text-[32px]">Each valve, tomorrow</h2>
-        <p className="mb-4 text-[15px] text-ink/70">Exact minutes, start time, and how salty that patch of soil is right now.</p>
+        <h2 className="mb-1 text-[28px] font-semibold md:text-[32px]">How long each valve should run</h2>
+        <p className="mb-4 max-w-[760px] text-[15px] text-ink/70">
+          Each card shows when to open and close the valve, why it needs that much water, and how salty the soil in that part of
+          the farm is right now.
+        </p>
         <div data-demo="valves">
           <Stagger className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {plan.valves.map((vp) => (
@@ -210,12 +219,13 @@ function WeekChart({ valves, weather, live }: { valves: ValvePlan[]; weather: We
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="text-[28px] font-semibold md:text-[32px]">The next 7 days</h2>
-          <p className="mt-1 text-[15px] text-ink/70">
-            Total watering time each day. <span className="font-semibold text-[#8a5413]">Amber days</span> are salt wash days — Namak picks the
-            coolest days, when plants drink least.
+          <p className="mt-1 max-w-[720px] text-[15px] text-ink/70">
+            Each bar shows the total watering time for one day. Bars with an <span className="font-semibold text-[#8a5413]">amber outline</span>{' '}
+            are “salt wash days”: Namak gives extra water on the coolest days, when plants drink the least, to wash out salt that has
+            built up.
           </p>
         </div>
-        <SourceTag>{live ? 'Live weather forecast' : 'Saved weather forecast'}</SourceTag>
+        <SourceTag>{live ? 'Weather forecast' : 'Saved weather forecast'}</SourceTag>
       </div>
 
       <div className="mt-6 flex items-end gap-2 sm:gap-4" style={{ height: H + 56 }} role="img" aria-label="Bar chart of watering minutes for the next seven days">

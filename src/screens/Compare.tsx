@@ -55,7 +55,7 @@ export default function Compare() {
   return (
     <div className="space-y-5">
       <div>
-        <Eyebrow>The worker’s habit vs Namak</Eyebrow>
+        <Eyebrow>The usual routine vs Namak</Eyebrow>
         <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">
           Salty water costs this farm{' '}
           <span className="text-red-debt tabular">
@@ -64,12 +64,13 @@ export default function Compare() {
           a year.
         </h1>
         <p className="mt-3 max-w-[760px] text-[16px] leading-relaxed text-ink/75">
-          Here is the problem in one line: the well water is salty, salt builds up in the soil, and the only fix is extra water to
-          wash it below the roots. Most farms just water the same amount every day and hope. Below, we compare that habit with
-          Namak’s plan over a full year of real weather.
+          The well water on this farm is salty. When crops are watered, the salt stays in the soil and builds up. The only way to
+          remove it is to give a little extra water, which drains down and carries the salt away. Most farms never measure this:
+          the worker simply waters the same amount every day. Below, we compare that routine with Namak’s plan over a full year
+          of real weather.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <SourceTag>Real weather, last 12 months</SourceTag>
+          <SourceTag>Real weather from the last 12 months</SourceTag>
           <SourceTag tone="sand">Example farm</SourceTag>
         </div>
       </div>
@@ -79,12 +80,12 @@ export default function Compare() {
           <Counter
             value={`${int(savedM3)}`}
             unit="m³"
-            label={cmp.savedLitres >= 0 ? 'less water a year with Namak' : 'more water a year'}
+            label={cmp.savedLitres >= 0 ? 'less water used in a year with Namak' : 'more water used in a year'}
             sub={`≈ ${one(Math.abs(savedM3) / POOL_M3)} Olympic swimming pools`}
             tone={cmp.savedLitres >= 0 ? 'teal' : 'red'}
           />
-          <Counter value={aed(Math.abs(savedAed)).replace('AED ', '')} unit="AED" label={cmp.savedLitres >= 0 ? 'saved on water a year' : 'extra a year'} tone="teal" />
-          <Counter value={habitLossT >= 0.5 ? `−${int(habitLossT)}%` : '0%'} unit="" label="crop lost to salt with the habit" tone={habitLoss > 0.5 ? 'red' : 'ink'} sub={`With Namak: ${namakLossT >= 0.5 ? `−${int(namakLossT)}%` : 'none'}`} />
+          <Counter value={aed(Math.abs(savedAed)).replace('AED ', '')} unit="AED" label={cmp.savedLitres >= 0 ? 'saved on water in a year' : 'extra spent in a year'} tone="teal" />
+          <Counter value={habitLossT >= 0.5 ? `−${int(habitLossT)}%` : '0%'} unit="" label="of the harvest lost to salt with the usual routine" tone={habitLoss > 0.5 ? 'red' : 'ink'} sub={`With Namak: ${namakLossT >= 0.5 ? `−${int(namakLossT)}%` : 'none'}`} />
         </div>
 
       )}
@@ -144,15 +145,15 @@ export default function Compare() {
         <>
           <div className="grid grid-cols-2 gap-3">
             <SideCard
-              title="The usual habit"
-              subtitle="Same minutes every day, all year"
+              title="The usual routine"
+              subtitle="The same minutes every day, all year"
               litres={cmp.habitLitres}
               aedTotal={(cmp.habitLitres / 1000) * farm.waterCostAedM3}
               tone="sand"
             />
             <SideCard
               title="Namak"
-              subtitle="Adjusted daily for heat and salt"
+              subtitle="Changed every day for heat and salt"
               litres={cmp.namakLitres}
               aedTotal={(cmp.namakLitres / 1000) * farm.waterCostAedM3}
               tone="teal"
@@ -220,7 +221,7 @@ function ValveCompare({ v, canBlend }: { v: YearValve; canBlend: boolean }) {
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
           <p className="mb-1.5 text-[12px] font-semibold text-ink/70">
-            Usual habit: {v.habitPeakECe > v.target + 0.05 ? `soil gets too salty (up to ${one(v.habitPeakECe)}, safe is ${one(v.target)})` : 'soil stays safe'} · harvest {int(v.habitYield)}%
+            Usual routine: {v.habitPeakECe > v.target + 0.05 ? `soil gets too salty (up to ${one(v.habitPeakECe)}, safe is ${one(v.target)})` : 'soil stays safe'} · harvest {int(v.habitYield)}%
           </p>
           <SaltGauge ece={v.habitPeakECe} crop={crop} target={v.target} compact />
         </div>
@@ -247,7 +248,7 @@ function ValveCompare({ v, canBlend }: { v: YearValve; canBlend: boolean }) {
         </p>
       )}
       {v.habitWaterMet < 0.97 && (
-        <p className="mt-2 text-[13px] text-ink/70">The habit also leaves this crop thirsty on hot days: it gives only {pct(v.habitWaterMet)} of what it needs over the year.</p>
+        <p className="mt-2 text-[13px] text-ink/70">The usual routine also leaves this crop thirsty on hot days: it gives only {pct(v.habitWaterMet)} of what it needs over the year.</p>
       )}
     </Card>
   )
@@ -266,8 +267,8 @@ function MonthlyChart({ monthly }: { monthly: { month: string; namakL: number; h
     <Card className="md:p-8">
       <h2 className="text-[24px] font-semibold md:text-[28px]">Month by month</h2>
       <p className="mt-1 max-w-[680px] text-[15px] text-ink/70">
-        The habit pours the same amount all year: too much in the cool winter, too little in the summer heat. Namak follows the
-        weather.
+        The usual routine gives the same amount of water every month: too much in the cool winter, and too little in the summer
+        heat. Namak follows the weather.
       </p>
       <div className="mt-6 flex items-end gap-1.5 sm:gap-3" style={{ height: H + 28 }} role="img" aria-label="Monthly water use, habit versus Namak">
         {monthly.map((mo, i) => (
@@ -294,7 +295,7 @@ function MonthlyChart({ monthly }: { monthly: { month: string; namakL: number; h
       </div>
       <div className="mt-4 flex gap-5 text-[13px]">
         <span className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-[4px] bg-sand-300" /> Usual habit
+          <span className="h-3 w-3 rounded-[4px] bg-sand-300" /> Usual routine
         </span>
         <span className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-[4px] bg-teal-water" /> Namak

@@ -46,7 +46,7 @@ Every screen explains the idea from scratch in everyday words; the technical mat
 | **Tomorrow** | Total watering time, a card per valve (“Valve 1 · Palms · 95 min · 00:00 → 01:35”), one-line *why* (heat + salt), a Salt Debt gauge, blend advice, and the 7-day plan with repayment days marked. |
 | **Habit vs Namak** | A year of real weather at the farm. Drag the **well-EC slider** and the salt water cost, water/AED saved and yield risk change live; when the water is too salty for a crop, Namak shows the RO/TSE **blend ratio**. |
 | **Season Replay** | Last year re-run day by day on **ERA5 reanalysis weather**: cumulative water and root-zone salt, habit vs Namak, animated. This is the proof that the decision beats the guess. |
-| **Worker** | Phone mock-up. *Send to worker* → two sentences in English, Arabic, Hindi, Urdu or Malayalam, played as a voice note. *Worker sends EC reading* → photo of the pen → AI reads it → owner confirms → plan recalculates with a visible diff. |
+| **Worker** | Phone mock-up. *Send to the worker* → two short sentences in English, Arabic, Hindi, Urdu or Malayalam, played as a voice message. *Check how salty the well is* → pick one of three example salt-meter photos → its reading appears → the owner confirms → the plan recalculates with a visible before/after. |
 | **Farm** | Location, well EC, blend water, valves (crop, plants, spacing, emitters, flow), soil test, the worker’s habit. Saved on the phone. |
 | **Why it works** | Sources, formulas, crop constants, real vs illustrative, limits, cost. |
 
@@ -174,12 +174,18 @@ Every number in the UI carries a source tag (“Live forecast · Open-Meteo”, 
 | Route | Model | Does | Guard rails |
 |---|---|---|---|
 | `/api/instruct` | `gemini-4-hydrogen` (thinking: low) | Plan → 2 sentences in the worker’s language | Every minute and start time is checked against the plan; if anything differs, too slow or offline → deterministic template |
-| `/api/voice` | `gemini-3.8-flash-lite-tts` | Text → voice note (WAV) | Prefetched when the screen opens; fallback: phone’s own TTS, then committed recorded samples |
-| `/api/read-ec` | `gemini-4-hydrogen` vision, strict JSON schema | Photo → value + unit | mS/cm = dS/m, µS/cm ÷ 1000, ppm rejected, 0–20 dS/m only; owner must confirm; manual entry fallback |
+| `/api/voice` | `gemini-3.8-flash-lite-tts` | Text → voice message (WAV) | Generated only when someone presses Send, then cached on the device; fallback: the phone’s own voice |
+| `/api/read-ec` | `gemini-4-hydrogen` vision, strict JSON schema | Photo → value + unit | mS/cm = dS/m, µS/cm ÷ 1000, ppm rejected, 0–20 dS/m only. The app’s three example photos use readings this model produced once (saved in `src/data/demoAssets.json`) |
 
 The key lives only in Vercel’s environment (`GEMINI_API_KEY`); per-IP limits and a daily cap protect the quota. Model IDs
 and request formats were taken from Google’s docs on 16 Nov 2026 (Interactions API, `Api-Revision: 2026-05-20`).
 The AI never decides minutes: the engine does; AI only translates, speaks and reads a display.
+
+**Generated once, reused:** the guided demo runs on a fixed *demo day* (the real forecast recorded on 16 Nov 2026). Its worker
+messages in all five languages, their voice recordings and the readings of the three example meter photos were produced once
+by Gemini (`scripts/make-demo-assets.mts`) and saved in the repo (`public/demo/`, `src/data/demoAssets.json`). The demo makes
+no AI calls, always shows the same result, and a test fails if an engine change ever makes the saved messages disagree with
+the plan. Outside the demo, a live message is generated only when someone presses *Send*, and is cached.
 
 ## Assumptions & limitations
 
@@ -209,7 +215,7 @@ set -a; . ./.env.local; set +a; vercel dev
 ```
 
 Deploy: `vercel env add GEMINI_API_KEY production`, then `vercel --prod`. Refresh the bundled weather snapshot with
-`node scripts/snapshot-weather.mjs`; regenerate the recorded voice samples with `npx tsx scripts/make-sample-voice.mts`.
+`node scripts/snapshot-weather.mjs`; regenerate the saved demo AI content with `npx tsx scripts/make-demo-assets.mts` (needs `GEMINI_API_KEY`).
 
 **Stack:** Vite · React 19 · TypeScript · Tailwind v4 · Motion (animation) · Recharts · vite-plugin-pwa · Vitest · Vercel functions · Gemini.
 Type: the device's system font (SF Pro on Apple devices), Inter elsewhere. All animation respects `prefers-reduced-motion`.

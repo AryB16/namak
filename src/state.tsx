@@ -1,9 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { DEMO_FARM } from './data/demoFarm'
 import { getForecast, getLastYear, peekForecast, peekLastYear, type WeatherResult } from './data/weather'
+import demoAssets from './data/demoAssets.json'
+import snapshotForecast from './data/snapshot-forecast.json'
 import type { Farm, WeatherDay } from './engine/plan'
 
 const FARM_KEY = 'namak.farm.v1'
+
+/** The recorded forecast days the demo's saved AI messages were made for (tomorrow onward). */
+const DEMO_DAYS: WeatherDay[] = (snapshotForecast.days as WeatherDay[]).filter((d) => d.date >= demoAssets.demoDay).slice(0, 7)
 
 function loadFarm(): Farm {
   try {
@@ -34,6 +39,9 @@ interface AppState {
   forecastError: string | null
   /** True while the live forecast is being fetched (a cached one may already be on screen). */
   forecastLoading: boolean
+  /** Guided demo: plan from the recorded demo-day forecast so it matches the saved AI voice messages. */
+  demoDay: boolean
+  setDemoDay: (on: boolean) => void
   /** Plan days from tomorrow onward (up to 7). */
   planDays: WeatherDay[]
   year: WeatherResult | null
@@ -77,6 +85,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   })
   const [tick, setTick] = useState(0)
+  const [demoDay, setDemoDay] = useState(false)
 
   const setFarm = useCallback((f: Farm) => {
     setFarmState(f)
@@ -152,7 +161,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       forecast,
       forecastError,
       forecastLoading,
-      planDays: planDaysFrom(forecast),
+      planDays: demoDay ? DEMO_DAYS : planDaysFrom(forecast),
+      demoDay,
+      setDemoDay,
       year,
       yearError,
       online,
@@ -160,7 +171,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addReading,
       refresh: () => setTick((t) => t + 1),
     }),
-    [farm, setFarm, resetFarm, forecast, forecastError, forecastLoading, year, yearError, online, readings, addReading],
+    [farm, setFarm, resetFarm, forecast, forecastError, forecastLoading, demoDay, year, yearError, online, readings, addReading],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

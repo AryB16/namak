@@ -267,3 +267,26 @@ select:focus-visible {
   border-radius: 28px;
   transition: outline-color 0.3s;
 }
+
+/* "Reading the photo" scan line on the example meter photo */
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 36%;
+  top: -36%;
+  background: linear-gradient(180deg, transparent, rgba(95, 211, 198, 0.55) 85%, rgba(255, 255, 255, 0.9));
+  animation: scan 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes scan {
+  to {
+    transform: translateY(380%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scan-line {
+    animation: none;
+    top: 0;
+    opacity: 0.35;
+  }
+}

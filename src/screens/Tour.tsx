@@ -11,7 +11,7 @@ import era5 from '../data/snapshot-era5.json'
 import { compareYear } from '../engine/farm'
 import { replaySeason, type WeatherDay } from '../engine/plan'
 import { LANGS } from '../lib/instruction'
-import sampleVoice from '../data/sampleVoice.json'
+import demoAssets from '../data/demoAssets.json'
 
 type Story = ReturnType<typeof computeStory>
 
@@ -182,7 +182,7 @@ function HiddenCost({ saltM3, cropM3 }: { saltM3: number; cropM3: number }) {
     <section data-tone="light" className="bg-salt px-6 py-28 text-ink md:py-40">
       <div className="mx-auto max-w-[980px] text-center">
         <Reveal>
-          <p className="text-[17px] font-semibold text-teal-water md:text-[21px]">Problem one</p>
+          <p className="text-[17px] font-semibold text-teal-water md:text-[21px]">The first problem</p>
           <h2 className="mt-3 text-[40px] leading-[1.05] font-semibold md:text-[64px]">Salt is the hidden water cost.</h2>
         </Reveal>
         <Reveal delay={0.1}>
@@ -249,18 +249,18 @@ function DebtStory({ s }: { s: Story }) {
   const steps = [
     {
       k: 'The habit',
-      t: `Same ${s.palms.v.habitMinutes} minutes, every day.`,
-      b: 'The worker’s summer setting, left on all year. In winter it floods the palms. In summer it can’t keep up — and the salt stays behind.',
+      t: `The same ${s.palms.v.habitMinutes} minutes, every day.`,
+      b: 'This is how the worker waters the palms all year. In winter it is far too much water. In summer it is not enough to wash the salt away.',
     },
     {
-      k: 'Problem two · Salt debt',
-      t: 'By July, the debt comes due.',
-      b: `Salt in the palm roots climbs to ${Math.round(s.palmPeakPct)}% over the limit. ${s.palmHabitOver} days of the year in the red.`,
+      k: 'The second problem: salt debt',
+      t: 'Salt builds up like a debt.',
+      b: `By summer the soil holds ${Math.round(s.palmPeakPct)}% more salt than palms can handle, and it stays too salty for ${s.palmHabitOver} days of the year.`,
     },
     {
       k: 'Namak',
-      t: 'Pay it down on cool days.',
-      b: `Just enough flush every night, extra on the week’s coolest days — as FAO-29 recommends. ${s.palmNamakOver} day over the limit.`,
+      t: 'Namak pays it back on cool days.',
+      b: `It adds just enough extra water every day, and a bigger wash on the coolest days, when plants drink least. The soil was too salty on only ${s.palmNamakOver} day.`,
     },
   ]
 
@@ -286,13 +286,13 @@ function DebtStory({ s }: { s: Story }) {
           </div>
           <div className="rounded-[28px] bg-salt p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.35)] md:p-7">
             <div className="flex items-baseline justify-between">
-              <p className="text-[13px] font-semibold text-ink/70">Root-zone salt · date palms</p>
+              <p className="text-[13px] font-semibold text-ink/70">Salt in the soil around the palm roots</p>
               <p className="text-[12px] text-ink/65">dS/m · ERA5 weather</p>
             </div>
             <svg viewBox={`0 0 ${W} ${H + 24}`} className="mt-4 w-full" role="img" aria-label="Root-zone salt over a year: habit rises above the limit in summer; Namak stays at the limit">
               <line x1={0} x2={W} y1={y(target)} y2={y(target)} stroke="#c0362c" strokeDasharray="6 6" strokeWidth={1.5} />
               <text x={W * 0.36} y={y(target) - 12} textAnchor="middle" fontSize="13" fill="#c0362c" fontWeight="600">
-                palm salt limit {target.toFixed(1)} dS/m
+                safe level for palms ({target.toFixed(1)})
               </text>
               <m.path d={path(habit)} fill="none" stroke="#e08a1e" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" style={{ pathLength: habitLen }} />
               <m.path d={path(namak)} fill="none" stroke="#0a6f69" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" style={{ pathLength: namakLen, opacity: namakOpacity }} />
@@ -323,14 +323,14 @@ function ValveSection() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
   const phoneY = useTransform(scrollYProgress, [0, 1], [120, -80])
   const phoneRot = useTransform(scrollYProgress, [0, 0.5], [-6, 0])
-  const texts = sampleVoice.texts as Record<string, string>
+  const texts = Object.fromEntries(Object.entries(demoAssets.voice).map(([k, v]) => [k, v.text])) as Record<string, string>
   return (
     <section ref={ref} data-tone="dark" className="overflow-hidden bg-night px-6 py-28 md:py-40">
       <div className="mx-auto grid max-w-[1080px] items-center gap-14 md:grid-cols-2">
         <div>
           <Reveal>
-            <p className="text-[17px] font-semibold text-glow-salt">Problem three</p>
-            <h2 className="mt-3 text-[40px] leading-[1.05] font-semibold md:text-[60px]">The decision-maker isn’t at the valve.</h2>
+            <p className="text-[17px] font-semibold text-glow-salt">The third problem</p>
+            <h2 className="mt-3 text-[40px] leading-[1.05] font-semibold md:text-[60px]">The person with the plan isn’t the one at the tap.</h2>
             <p className="mt-6 max-w-[460px] text-[19px] leading-snug text-white/70">
               The owner decides. A hired worker opens the valves — often by habit, often in another language. Namak sends tomorrow’s
               exact minutes as a voice note in theirs.
