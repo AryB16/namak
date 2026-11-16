@@ -3,42 +3,57 @@
  * the illustrative demo farm — nothing is hard-coded.
  */
 import { motion, useMotionValueEvent, useScroll, useTransform } from 'motion/react'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { markToured } from '../lib/tour'
 import { CountUp, EASE, Reveal } from '../components/motion'
 import { DEMO_FARM } from '../data/demoFarm'
 import era5 from '../data/snapshot-era5.json'
 import { compareYear } from '../engine/farm'
-import { replaySeason, totals, type WeatherDay } from '../engine/plan'
+import { replaySeason, type WeatherDay } from '../engine/plan'
 import { LANGS } from '../lib/instruction'
 import sampleVoice from '../data/sampleVoice.json'
 
-function useStory() {
-  return useMemo(() => {
-    const days = era5.days as WeatherDay[]
-    const year = compareYear(DEMO_FARM, days)
-    const runs = DEMO_FARM.valves.map((v) => {
-      const r = replaySeason(DEMO_FARM, v, days)
-      return { v, r, n: totals(DEMO_FARM, v, r.namak), h: totals(DEMO_FARM, v, r.habit) }
-    })
-    const palms = runs.find((x) => x.v.cropId === 'date-palm')!
-    const over = (d: { eceEnd: number; target: number }[]) => d.filter((x) => x.eceEnd > x.target + 0.05).length
-    const yTomato = year.valves.find((v) => v.valve.cropId === 'tomato')!
-    return {
-      saltM3: year.saltLitres / 1000,
-      cropM3: (year.namakLitres - year.saltLitres) / 1000,
-      // Same figures as the "Habit vs Namak" screen and the README (12 months of ERA5 weather).
-      savedPct: (year.savedLitres / year.habitLitres) * 100,
-      palms,
-      palmHabitOver: over(palms.r.habit),
-      palmNamakOver: over(palms.r.namak),
-      palmPeakPct: (Math.max(...palms.r.habit.map((d) => d.eceEnd)) / palms.r.habit[0].target - 1) * 100,
-      tomatoHabit: yTomato.habitYield,
-      tomatoNamak: yTomato.namakYield,
-      from: days.slice(-365)[0].date,
-      to: days[days.length - 1].date,
+type Story = ReturnType<typeof computeStory>
+
+function computeStory() {
+  const days = era5.days as WeatherDay[]
+  const year = compareYear(DEMO_FARM, days)
+  // Only the palm valve needs a day-by-day replay (for the pinned chart); the rest comes from compareYear.
+  const pv = DEMO_FARM.valves.find((v) => v.cropId === 'date-palm')!
+  const r = replaySeason(DEMO_FARM, pv, days)
+  const palms = { v: pv, r }
+  const over = (d: { eceEnd: number; target: number }[]) => d.filter((x) => x.eceEnd > x.target + 0.05).length
+  const yTomato = year.valves.find((v) => v.valve.cropId === 'tomato')!
+  return {
+    saltM3: year.saltLitres / 1000,
+    cropM3: (year.namakLitres - year.saltLitres) / 1000,
+    // Same figures as the "Habit vs Namak" screen and the README (12 months of ERA5 weather).
+    savedPct: (year.savedLitres / year.habitLitres) * 100,
+    palms,
+    palmHabitOver: over(r.habit),
+    palmNamakOver: over(r.namak),
+    palmPeakPct: (Math.max(...r.habit.map((d) => d.eceEnd)) / r.habit[0].target - 1) * 100,
+    tomatoHabit: yTomato.habitYield,
+    tomatoNamak: yTomato.namakYield,
+    from: days.slice(-365)[0].date,
+    to: days[days.length - 1].date,
+  }
+}
+
+/** Compute the story after first paint so the hero appears instantly. */
+function useStory(): Story | null {
+  const [s, setS] = useState<Story | null>(null)
+  useEffect(() => {
+    const run = () => setS(computeStory())
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(run, { timeout: 1200 })
+      return () => (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id)
     }
+    const t = setTimeout(run, 200)
+    return () => clearTimeout(t)
   }, [])
+  return s
 }
 
 const monthYear = (iso: string) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' })
@@ -54,11 +69,17 @@ export default function Tour() {
     <div className="bg-night text-white">
       <TourHeader />
       <Hero />
-      <HiddenCost saltM3={s.saltM3} cropM3={s.cropM3} />
-      <DebtStory s={s} />
-      <ValveSection />
-      <Results s={s} />
-      <Final from={s.from} to={s.to} />
+      {s ? (
+        <>
+          <HiddenCost saltM3={s.saltM3} cropM3={s.cropM3} />
+          <DebtStory s={s} />
+          <ValveSection />
+          <Results s={s} />
+          <Final from={s.from} to={s.to} />
+        </>
+      ) : (
+        <div className="h-[100svh] bg-salt" />
+      )}
     </div>
   )
 }
@@ -125,7 +146,7 @@ function Hero() {
               className="inline-block pr-[0.22em]"
               initial={{ opacity: 0, y: 40, filter: 'blur(12px)' }}
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 1, ease: EASE, delay: 0.15 + i * 0.12 }}
+              transition={{ duration: 0.9, ease: EASE, delay: 0.05 + i * 0.08 }}
             >
               {w}
             </motion.span>
@@ -135,7 +156,7 @@ function Hero() {
           className="mx-auto mt-6 max-w-[560px] text-[19px] leading-snug text-white/70 md:text-[24px]"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: EASE, delay: 0.8 }}
+          transition={{ duration: 0.8, ease: EASE, delay: 0.35 }}
         >
           Every litre leaves salt in the soil. Namak keeps the account — and tells the person at the valve what to do tomorrow.
         </motion.p>
@@ -206,7 +227,7 @@ function HiddenCost({ saltM3, cropM3 }: { saltM3: number; cropM3: number }) {
 }
 
 /* 3 — Pinned: the salt debt builds up, then Namak pays it down */
-function DebtStory({ s }: { s: ReturnType<typeof useStory> }) {
+function DebtStory({ s }: { s: Story }) {
   const ref = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] })
   const habitLen = useTransform(scrollYProgress, [0.05, 0.6], [0, 1])
@@ -382,7 +403,7 @@ function ValveSection() {
 }
 
 /* 5 — Results */
-function Results({ s }: { s: ReturnType<typeof useStory> }) {
+function Results({ s }: { s: Story }) {
   const tiles: { big: ReactNode; label: string; tone: string }[] = [
     { big: <CountUp value={s.savedPct} format={(n) => `${Math.round(n)}%`} />, label: 'less water across the farm than the worker’s habit', tone: 'text-teal-water' },
     {
