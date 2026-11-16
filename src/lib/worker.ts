@@ -15,6 +15,16 @@ export function instructionPlan(plan: FarmPlan): InstructionPlan {
 
 const key = (p: InstructionPlan, lang: Lang) => `namak.instr.v1:${lang}:${JSON.stringify(p)}`
 
+/** Deterministic URLs, so identical requests from different visitors hit the same CDN cache entry. */
+export function instructUrl(p: InstructionPlan, lang: Lang): string {
+  const plan = { date: p.date, valves: p.valves.map((v) => ({ n: v.n, minutes: v.minutes, start: v.start, repayment: v.repayment })) }
+  return `/api/instruct?lang=${lang}&plan=${encodeURIComponent(JSON.stringify(plan))}`
+}
+
+export function voiceUrl(text: string, lang: Lang): string {
+  return `/api/voice?lang=${lang}&text=${encodeURIComponent(text)}`
+}
+
 export interface Instruction {
   text: string
   source: 'gemini' | 'template'
@@ -38,12 +48,8 @@ export async function fetchInstruction(p: InstructionPlan, lang: Lang): Promise<
   try {
     const ctrl = new AbortController()
     const t = setTimeout(() => ctrl.abort(), 25_000)
-    const res = await fetch('/api/instruct', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lang, plan: p }),
-      signal: ctrl.signal,
-    })
+    // GET with the plan in the URL: Vercel's CDN shares one AI answer per plan + language with every visitor.
+    const res = await fetch(instructUrl(p, lang), { signal: ctrl.signal })
     clearTimeout(t)
     if (!res.ok) return fallback
     const j = (await res.json()) as { text: string; source: 'gemini' | 'template'; reason?: string }
@@ -84,12 +90,7 @@ export async function fetchVoice(text: string, lang: Lang): Promise<string | nul
   try {
     const ctrl = new AbortController()
     const t = setTimeout(() => ctrl.abort(), 50_000)
-    const res = await fetch('/api/voice', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, lang }),
-      signal: ctrl.signal,
-    })
+    const res = await fetch(voiceUrl(text, lang), { signal: ctrl.signal })
     clearTimeout(t)
     if (!res.ok || !(res.headers.get('content-type') || '').startsWith('audio/')) return null
     const blob = await res.blob()

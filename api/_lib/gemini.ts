@@ -83,3 +83,14 @@ export function json(body: unknown, status = 200, extra: Record<string, string> 
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...extra },
   })
 }
+
+/**
+ * Cache headers for a successful AI result requested with GET: Vercel's CDN keeps it for 24 h, so every visitor who asks
+ * for the same plan + language gets the same answer instantly, with no new AI call. Browsers keep it for an hour.
+ * Failures and fallbacks are never sent with these headers.
+ */
+export const SHARED_CACHE = {
+  'Cache-Control': 'public, max-age=3600',
+  'CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
+  'Vercel-CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
+}

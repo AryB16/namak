@@ -1,5 +1,7 @@
 /**
- * POST /api/instruct  { lang, plan }  →  { text, source: 'gemini' | 'template', reason? }
+ * GET  /api/instruct?lang=hi&plan=<json>  (cacheable: the same plan + language is answered from Vercel's CDN for 24 h)
+ * POST /api/instruct  { lang, plan }
+ *   →  { text, source: 'gemini' | 'template', reason? }
  * Gemini writes two short sentences in the worker's language; if it fails, is rate-limited, or changes any number,
  * the deterministic template is returned instead.
  */
@@ -11,7 +13,7 @@ import {
   type InstructionPlan,
   type Lang,
 } from '../src/lib/instruction.js'
-import { TEXT_MODEL, interact, json, outputText } from './_lib/gemini.js'
+import { SHARED_CACHE, TEXT_MODEL, interact, json, outputText } from './_lib/gemini.js'
 import { checkLimit } from './_lib/limit.js'
 
 function parse(body: unknown): { lang: Lang; plan: InstructionPlan } | null {
@@ -39,6 +41,22 @@ export async function POST(req: Request): Promise<Response> {
     /* fallthrough */
   }
   if (!input) return json({ error: 'bad request' }, 400)
+  return run(req, input, false)
+}
+
+export async function GET(req: Request): Promise<Response> {
+  const q = new URL(req.url).searchParams
+  let input: ReturnType<typeof parse> = null
+  try {
+    input = parse({ lang: q.get('lang'), plan: JSON.parse(q.get('plan') || 'null') })
+  } catch {
+    /* fallthrough */
+  }
+  if (!input) return json({ error: 'bad request' }, 400)
+  return run(req, input, true)
+}
+
+async function run(req: Request, input: { lang: Lang; plan: InstructionPlan }, shareable: boolean): Promise<Response> {
   const fallback = templateInstruction(input.plan, input.lang)
 
   const lim = checkLimit(req, 'instruct', 8)
@@ -67,7 +85,7 @@ export async function POST(req: Request): Promise<Response> {
     if (!text || text.length > 600) return json({ text: fallback, source: 'template', reason: 'empty or too long' })
     if (!instructionMatchesPlan(text, input.plan))
       return json({ text: fallback, source: 'template', reason: 'AI changed a number; using the template' })
-    return json({ text, source: 'gemini', model: TEXT_MODEL })
+    return json({ text, source: 'gemini', model: TEXT_MODEL }, 200, shareable ? SHARED_CACHE : {})
   } catch (e) {
     console.error('instruct failed:', (e as Error).message)
     return json({ text: fallback, source: 'template', reason: 'AI unavailable' })

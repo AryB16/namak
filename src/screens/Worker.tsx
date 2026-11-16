@@ -250,7 +250,7 @@ export default function Worker() {
               {isRecorded ? (
                 <SourceTag tone="sand">Demo day: made once and saved</SourceTag>
               ) : (
-                <SourceTag tone="sand">Written live for today’s forecast</SourceTag>
+                <SourceTag tone="sand">Made once for today’s plan, then shared</SourceTag>
               )}
             </div>
           </Card>

@@ -1,9 +1,11 @@
 /**
- * POST /api/voice  { text, lang }  →  audio/wav (Gemini TTS)
+ * GET  /api/voice?lang=hi&text=...  (cacheable: the same text is served from Vercel's CDN for 24 h)
+ * POST /api/voice  { text, lang }
+ *   →  audio/wav (Gemini TTS)
  * Errors return JSON with status ≥ 400; the client then uses the browser's speechSynthesis or a committed sample.
  */
 import { LANGS } from '../src/lib/instruction.js'
-import { TTS_MODEL, interact, json, outputAudio } from './_lib/gemini.js'
+import { SHARED_CACHE, TTS_MODEL, interact, json, outputAudio } from './_lib/gemini.js'
 import { checkLimit } from './_lib/limit.js'
 
 export async function POST(req: Request): Promise<Response> {
@@ -16,6 +18,15 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     /* fallthrough */
   }
+  return run(req, text, lang, false)
+}
+
+export async function GET(req: Request): Promise<Response> {
+  const q = new URL(req.url).searchParams
+  return run(req, String(q.get('text') ?? '').trim(), String(q.get('lang') ?? ''), true)
+}
+
+async function run(req: Request, text: string, lang: string, shareable: boolean): Promise<Response> {
   if (!text || text.length > 600 || !LANGS.some((l) => l.id === lang)) return json({ error: 'bad request' }, 400)
 
   const lim = checkLimit(req, 'voice', 6)
@@ -41,7 +52,11 @@ export async function POST(req: Request): Promise<Response> {
     const bytes = Buffer.from(audio.data, 'base64')
     return new Response(bytes, {
       status: 200,
-      headers: { 'Content-Type': audio.mime.startsWith('audio/') ? audio.mime : 'audio/wav', 'Cache-Control': 'no-store', 'X-Model': TTS_MODEL },
+      headers: {
+        'Content-Type': audio.mime.startsWith('audio/') ? audio.mime : 'audio/wav',
+        'X-Model': TTS_MODEL,
+        ...(shareable ? SHARED_CACHE : { 'Cache-Control': 'no-store' }),
+      },
     })
   } catch (e) {
     console.error('voice failed:', (e as Error).message)
