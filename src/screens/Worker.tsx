@@ -140,7 +140,7 @@ export default function Worker() {
     <div className="space-y-5">
       <div>
         <Eyebrow>Worker · the person at the valve</Eyebrow>
-        <h1 className="mt-2 font-display text-[34px] leading-[1.05] font-semibold text-teal-deep">Tomorrow’s plan, as a voice note.</h1>
+        <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">Tomorrow’s plan, as a voice note.</h1>
         <p className="mt-2 text-[15px] leading-relaxed text-ink/75">
           The owner decides; the worker opens the valves. Namak sends the exact minutes in the worker’s language — no reading
           needed — and the worker sends back a photo of a ~AED 100 EC pen dipped in the well.
@@ -154,7 +154,7 @@ export default function Worker() {
             role="radio"
             aria-checked={l.id === lang}
             onClick={() => setLang(l.id)}
-            className={`min-h-11 rounded-2xl px-3.5 text-sm font-semibold ${l.id === lang ? 'bg-teal-water text-salt' : 'bg-salt text-ink ring-1 ring-sand-300'}`}
+            className={`min-h-11 rounded-full px-4 text-sm font-semibold transition-colors ${l.id === lang ? 'bg-ink text-white' : 'bg-salt text-ink hover:bg-white/60'}`}
           >
             <span lang={l.bcp47}>{l.native}</span>
             {l.id !== 'en' && <span className="ml-1.5 text-[11px] opacity-70">{l.name}</span>}
@@ -169,24 +169,24 @@ export default function Worker() {
       <div className="grid gap-5 md:grid-cols-[340px_1fr] md:items-start">
         <Phone>
           <ChatHeader />
-          <div className="flex min-h-[420px] flex-col gap-3 bg-[#ece5d8] px-3 py-4" aria-live="polite">
+          <div className="flex min-h-[440px] flex-col gap-3 px-3 py-4" aria-live="polite">
             <p className="mx-auto rounded-lg bg-salt/80 px-2.5 py-1 text-[11px] text-ink/70">Tomorrow · {plan.days[0].date}</p>
             {step === 'idle' && !photo && (
               <p className="mx-auto mt-16 max-w-[220px] text-center text-sm text-ink/65">Press “Send to worker” to make tomorrow’s voice note.</p>
             )}
             {instr && (
-              <div className="ml-auto max-w-[88%] rounded-2xl rounded-tr-md bg-[#d4ece4] p-2.5 shadow-sm">
+              <div className="ml-auto max-w-[88%] rounded-[20px] rounded-br-md bg-teal-water p-3 text-white">
                 <VoiceNote url={audioUrl} source={voiceSrc} busy={step !== 'ready'} text={instr.text} lang={lang} />
-                <p dir={L.rtl ? 'rtl' : 'ltr'} lang={L.bcp47} className="mt-2 text-[14px] leading-relaxed text-ink">
+                <p dir={L.rtl ? 'rtl' : 'ltr'} lang={L.bcp47} className="mt-2 text-[14px] leading-relaxed text-white">
                   {instr.text}
                 </p>
-                <p className="mt-1 text-right text-[10px] text-ink/65">
+                <p className="mt-1.5 text-right text-[10px] text-white/75">
                   {sentAt} · {step === 'writing' ? `writing in ${L.name}…` : step === 'recording' ? `writing & recording in ${L.name} — about 20 s…` : labelFor(instr, voiceSrc)}
                 </p>
               </div>
             )}
             {photo && (
-              <div className="mr-auto max-w-[78%] rounded-2xl rounded-tl-md bg-salt p-2 shadow-sm">
+              <div className="mr-auto max-w-[78%] rounded-[20px] rounded-bl-md bg-white p-2 shadow-sm">
                 <img src={photo} alt="Photo of an EC pen display sent by the worker" className="max-h-52 w-full rounded-xl object-cover" />
                 <p className="mt-1.5 px-1 text-[13px] text-ink/80">EC pen, well water</p>
                 {reading === 'reading' && <p className="px-1 text-[11px] text-teal-water">Namak is reading the display…</p>}
@@ -198,7 +198,7 @@ export default function Worker() {
               </div>
             )}
             {diff && (
-              <div className="mx-auto w-full rounded-2xl bg-teal-deep px-3 py-2.5 text-[12px] text-salt">
+              <div className="mx-auto w-full rounded-2xl bg-ink px-3 py-2.5 text-[12px] text-white">
                 Plan updated: well {one(diff.from)} → {one(diff.to)} dS/m. New voice note ready to send.
               </div>
             )}
@@ -207,7 +207,7 @@ export default function Worker() {
 
         <div className="space-y-4">
           <Card>
-            <h2 className="font-display text-xl font-semibold">1 · Send tomorrow’s plan</h2>
+            <h2 className="text-[21px] font-semibold">1 · Send tomorrow’s plan</h2>
             <p className="mt-1 text-[13px] text-ink/65">
               Two sentences in {L.name}, written by AI from the plan and checked number-by-number against it. If the AI is slow,
               offline or changes a number, Namak uses its built-in template.
@@ -222,7 +222,7 @@ export default function Worker() {
           </Card>
 
           <Card>
-            <h2 className="font-display text-xl font-semibold">2 · Worker sends an EC reading</h2>
+            <h2 className="text-[21px] font-semibold">2 · Worker sends an EC reading</h2>
             <p className="mt-1 text-[13px] text-ink/65">
               The pen goes in a cup of well water; the worker photographs the display. AI reads the number, you confirm, and the
               plan recalculates. Try a sample photo:
@@ -264,7 +264,7 @@ export default function Worker() {
                   AI read <strong>{read.display || `${read.raw} ${read.unit}`}</strong> ({read.confidence} confidence)
                   {read.unitAssumed && ' — unit not visible, assumed mS/cm'}.
                 </p>
-                <p className="mt-1 font-display text-2xl font-semibold text-teal-deep">
+                <p className="mt-1 text-[28px] font-semibold text-ink">
                   Well water {one(read.ec)} dS/m <span className="font-sans text-sm font-semibold text-ink/65">(was {one(farm.wellEC)})</span>
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -329,7 +329,7 @@ function DiffCard({ diff }: { diff: { before: FarmPlan; after: FarmPlan; from: n
   return (
     <Card className="border-teal-water/30">
       <Eyebrow>Plan recalculated</Eyebrow>
-      <p className="mt-1 font-display text-2xl font-semibold text-teal-deep">
+      <p className="mt-1 text-[28px] font-semibold text-ink">
         Well water {one(diff.from)} → {one(diff.to)} dS/m
       </p>
       <table className="mt-3 w-full text-left text-sm">
@@ -349,14 +349,14 @@ function DiffCard({ diff }: { diff: { before: FarmPlan; after: FarmPlan; from: n
                 <td className="py-2 font-semibold">
                   {va.valve.name} · {CROPS[va.valve.cropId].short}
                 </td>
-                <td className="font-mono">
+                <td className="tabular">
                   {int(vb.days[0].minutes)} → <strong>{int(va.days[0].minutes)}</strong>{' '}
                   <span className={d > 0 ? 'text-[#9a5d12]' : 'text-green-ok'}>
                     ({d >= 0 ? '+' : ''}
                     {int(d)})
                   </span>
                 </td>
-                <td className="font-mono">
+                <td className="tabular">
                   {pct(vb.days[0].lr)} → {pct(va.days[0].lr)}
                   {va.blend.needed && !vb.blend.needed && <span className="block text-[11px] text-[#9a5d12]">now needs blending</span>}
                 </td>
@@ -375,12 +375,12 @@ function DiffCard({ diff }: { diff: { before: FarmPlan; after: FarmPlan; from: n
 
 function Phone({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto w-full max-w-[340px] rounded-[42px] bg-ink p-2.5 shadow-[0_30px_60px_-30px_rgba(8,52,58,0.6)]">
-      <div className="overflow-hidden rounded-[34px] bg-salt">
-        <div className="flex items-center justify-between px-6 pt-3 pb-1 font-mono text-[11px] text-ink/70">
-          <span>05:12</span>
-          <span className="h-4 w-20 rounded-full bg-ink" aria-hidden />
-          <span>4G ▮▮▯</span>
+    <div className="mx-auto w-full max-w-[340px] rounded-[50px] bg-[#2a2a2c] p-3 shadow-[0_40px_90px_-40px_rgba(10,111,105,0.6)] ring-1 ring-black/10">
+      <div className="overflow-hidden rounded-[40px] bg-[#f2f2f7]">
+        <div className="flex items-center justify-between px-7 pt-3.5 pb-1 text-[12px] font-semibold text-ink">
+          <span className="tabular">05:12</span>
+          <span className="h-[26px] w-24 rounded-full bg-black" aria-hidden />
+          <span className="tabular">4G</span>
         </div>
         {children}
       </div>
@@ -390,11 +390,11 @@ function Phone({ children }: { children: React.ReactNode }) {
 
 function ChatHeader() {
   return (
-    <div className="flex items-center gap-3 border-b border-sand-200 bg-teal-deep px-4 py-3 text-salt">
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f6c37a] font-display text-lg font-semibold text-ink">W</div>
+    <div className="flex items-center gap-3 border-b border-black/5 bg-white/85 px-4 py-3 text-ink backdrop-blur">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-glow-salt text-[15px] font-semibold text-ink">W</div>
       <div className="leading-tight">
-        <p className="text-sm font-semibold">Farm worker</p>
-        <p className="text-[11px] text-salt/70">voice notes · Valves 1–3</p>
+        <p className="text-[15px] font-semibold">Farm worker</p>
+        <p className="text-[12px] text-ink/60">voice notes · Valves 1–3</p>
       </div>
     </div>
   )
@@ -464,21 +464,21 @@ function VoiceNote({ url, source, busy, text, lang }: { url: string | null; sour
       <button
         onClick={toggle}
         disabled={disabled}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-water text-salt disabled:opacity-40"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-white disabled:opacity-40"
         aria-label={playing ? 'Pause voice note' : 'Play voice note'}
       >
-        {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-salt/40 border-t-salt" /> : playing ? <IconPause className="h-4 w-4" /> : <IconPlay className="h-4 w-4" />}
+        {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : playing ? <IconPause className="h-4 w-4" /> : <IconPlay className="h-4 w-4" />}
       </button>
       <div className="flex h-8 flex-1 items-center gap-[2px]" aria-hidden>
         {b.map((h, i) => (
           <span
             key={i}
-            className={`w-[3px] rounded-full ${i / b.length <= progress ? 'bg-teal-water' : 'bg-teal-water/30'}`}
+            className={`w-[3px] rounded-full ${i / b.length <= progress ? 'bg-white' : 'bg-white/40'}`}
             style={{ height: `${h * 100}%` }}
           />
         ))}
       </div>
-      <span className="w-9 text-right font-mono text-[10px] text-ink/65">{dur ? `0:${String(Math.round(dur)).padStart(2, '0')}` : busy ? '…' : '0:12'}</span>
+      <span className="w-9 text-right tabular text-[10px] text-white/75">{dur ? `0:${String(Math.round(dur)).padStart(2, '0')}` : busy ? '…' : '0:12'}</span>
     </div>
   )
 }

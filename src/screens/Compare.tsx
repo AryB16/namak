@@ -40,7 +40,7 @@ export default function Compare() {
     <div className="space-y-5">
       <div>
         <Eyebrow>Habit vs Namak</Eyebrow>
-        <h1 className="mt-2 font-display text-[34px] leading-[1.05] font-semibold text-teal-deep">
+        <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">
           Salt costs this farm <span className="text-red-debt tabular">{int(saltM3)} m³</span> of water a year.
         </h1>
         <p className="mt-2 text-[15px] leading-relaxed text-ink/75">
@@ -67,7 +67,7 @@ export default function Compare() {
 
       )}
 
-      <Card className="shadow-[0_10px_30px_-18px_rgba(8,52,58,0.45)]">
+      <Card className="md:p-8">
         <div className="flex items-end justify-between gap-3">
           <div>
             <label htmlFor="well-ec" className="text-sm font-semibold text-ink/80">
@@ -75,7 +75,7 @@ export default function Compare() {
             </label>
             <p className={`text-xs font-semibold ${wc.tone}`}>{wc.label} (FAO-29 Table 1)</p>
           </div>
-          <p className="font-display text-4xl font-semibold text-teal-deep tabular">
+          <p className="text-[44px] leading-none font-semibold tracking-[-0.03em] text-ink tabular">
             {one(wellEC)}
             <span className="ml-1 font-sans text-sm font-semibold text-ink/65">dS/m</span>
           </p>
@@ -91,7 +91,7 @@ export default function Compare() {
           className="salt-slider mt-4 w-full"
           aria-valuetext={`${one(wellEC)} deciSiemens per metre`}
         />
-        <div className="mt-1 flex justify-between font-mono text-[10px] text-ink/65">
+        <div className="mt-1 flex justify-between tabular text-[10px] text-ink/65">
           <span>0.5 fresh</span>
           <span>3.0</span>
           <span>8 very salty</span>
@@ -153,8 +153,8 @@ export default function Compare() {
 function Counter({ value, unit, label, sub, tone }: { value: string; unit: string; label: string; sub?: string; tone: 'teal' | 'red' | 'ink' }) {
   const t = { teal: 'text-teal-water', red: 'text-red-debt', ink: 'text-ink' }[tone]
   return (
-    <div className="rounded-2xl border border-sand-200 bg-salt p-3">
-      <p className={`font-display text-[26px] leading-none font-semibold tabular ${t}`}>
+    <div className="rounded-[24px] bg-salt p-4 md:p-6">
+      <p className={`text-[26px] leading-none font-semibold tracking-[-0.03em] tabular md:text-[40px] ${t}`}>
         {value}
         {unit && <span className="ml-0.5 font-sans text-xs font-semibold text-ink/65">{unit}</span>}
       </p>
@@ -167,10 +167,10 @@ function Counter({ value, unit, label, sub, tone }: { value: string; unit: strin
 function SideCard({ title, subtitle, litres, aedTotal, tone }: { title: string; subtitle: string; litres: number; aedTotal: number; tone: 'sand' | 'teal' }) {
   const m3 = useTween(litres / 1000)
   return (
-    <div className={`rounded-3xl p-4 ${tone === 'teal' ? 'bg-teal-deep text-salt' : 'bg-sand-200/70 text-ink'}`}>
-      <p className="font-display text-xl font-semibold">{title}</p>
+    <div className={`rounded-[28px] p-5 md:p-7 ${tone === 'teal' ? 'bg-night text-white' : 'bg-sand-200/80 text-ink'}`}>
+      <p className="text-[21px] font-semibold">{title}</p>
       <p className={`text-xs ${tone === 'teal' ? 'text-salt/70' : 'text-ink/70'}`}>{subtitle}</p>
-      <p className="mt-3 font-display text-3xl font-semibold tabular">
+      <p className="mt-4 text-[34px] leading-none font-semibold tracking-[-0.03em] tabular md:text-[48px]">
         {int(m3)}
         <span className="ml-1 font-sans text-xs font-semibold opacity-70">m³/yr</span>
       </p>
@@ -187,17 +187,17 @@ function ValveCompare({ v, canBlend }: { v: YearValve; canBlend: boolean }) {
         <p className="font-semibold">
           {v.valve.name} · {crop.name}
         </p>
-        <p className="font-mono text-xs text-ink/65">flush {pct(v.lf)} of water</p>
+        <p className="tabular text-xs text-ink/65">flush {pct(v.lf)} of water</p>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <div>
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink/65">
+          <p className="mb-1 text-[11px] font-semibold text-ink/65">
             Habit · salt peaks at {one(v.habitPeakECe)} · season yield {int(v.habitYield)}%
           </p>
           <SaltGauge ece={v.habitPeakECe} crop={crop} target={v.target} compact />
         </div>
         <div>
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-teal-water/80">
+          <p className="mb-1 text-[11px] font-semibold text-teal-water/80">
             Namak · {v.lfCapped ? 'flush capped' : 'held at the limit'} · season yield {int(v.namakYield)}%
           </p>
           <SaltGauge ece={v.namakECe} crop={crop} target={v.target} compact />

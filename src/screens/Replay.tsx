@@ -7,9 +7,9 @@ import { replaySeason, totals, type ValveDay } from '../engine/plan'
 import { dayLabel, int, one } from '../lib/format'
 import { useApp } from '../state'
 
-const TEAL = '#0e4a4f'
-const HABIT = '#a8743a'
-const LIMIT = '#b8432f'
+const TEAL = '#0a6f69'
+const HABIT = '#e08a1e'
+const LIMIT = '#c0362c'
 
 interface Row {
   date: string
@@ -105,7 +105,7 @@ export default function Replay() {
     <div className="space-y-5">
       <div>
         <Eyebrow>Season replay · proof it beats the guess</Eyebrow>
-        <h1 className="mt-2 font-display text-[34px] leading-[1.05] font-semibold text-teal-deep">
+        <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">
           Last year, replayed with real weather.
         </h1>
         <p className="mt-2 text-[15px] leading-relaxed text-ink/75">
@@ -127,7 +127,7 @@ export default function Replay() {
             role="tab"
             aria-selected={v.id === valve.id}
             onClick={() => setValveId(v.id)}
-            className={`min-h-11 rounded-2xl px-4 text-sm font-semibold ${v.id === valve.id ? 'bg-teal-water text-salt' : 'bg-salt text-ink ring-1 ring-sand-300'}`}
+            className={`min-h-11 rounded-full px-4 text-sm font-semibold transition-colors ${v.id === valve.id ? 'bg-ink text-white' : 'bg-salt text-ink hover:bg-white/60'}`}
           >
             {v.name} · {CROPS[v.cropId].short}
           </button>
@@ -137,7 +137,7 @@ export default function Replay() {
       <Card className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="font-mono text-xs text-ink/65">{cur ? dayLabel(cur.date, 'long') : ''}</p>
+            <p className="tabular text-xs text-ink/65">{cur ? dayLabel(cur.date, 'long') : ''}</p>
             <p className="text-sm font-semibold">{crop.name}{!crop.perennial && ' · one growing season'}</p>
           </div>
           <button
@@ -156,9 +156,9 @@ export default function Replay() {
         <div className="h-44">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="#e9dfcc" vertical={false} />
-              <XAxis dataKey="date" tickFormatter={monthTick} interval={Math.max(1, Math.floor(n / 6))} tick={{ fontSize: 10, fill: '#6b5638' }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, Math.ceil(maxM3)]} tick={{ fontSize: 10, fill: '#6b5638' }} axisLine={false} tickLine={false} width={40} tickFormatter={(x) => (x >= 1000 ? `${one(x / 1000).replace('.0', '')}k` : int(x))} />
+              <CartesianGrid stroke="#e8e8ed" vertical={false} />
+              <XAxis dataKey="date" tickFormatter={monthTick} interval={Math.max(1, Math.floor(n / 6))} tick={{ fontSize: 10, fill: '#6e6e73' }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, Math.ceil(maxM3)]} tick={{ fontSize: 10, fill: '#6e6e73' }} axisLine={false} tickLine={false} width={40} tickFormatter={(x) => (x >= 1000 ? `${one(x / 1000).replace('.0', '')}k` : int(x))} />
               <Tooltip content={<Tip unit="m³" a="habitM3" b="namakM3" />} />
               <Line type="monotone" dataKey="habitM3" stroke={HABIT} strokeWidth={2.5} dot={false} isAnimationActive={false} name="Habit" />
               <Line type="monotone" dataKey="namakM3" stroke={TEAL} strokeWidth={3} dot={false} isAnimationActive={false} name="Namak" />
@@ -170,9 +170,9 @@ export default function Replay() {
         <div className="h-44">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="#e9dfcc" vertical={false} />
-              <XAxis dataKey="date" tickFormatter={monthTick} interval={Math.max(1, Math.floor(n / 6))} tick={{ fontSize: 10, fill: '#6b5638' }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, Math.ceil(maxECe)]} tick={{ fontSize: 10, fill: '#6b5638' }} axisLine={false} tickLine={false} width={40} />
+              <CartesianGrid stroke="#e8e8ed" vertical={false} />
+              <XAxis dataKey="date" tickFormatter={monthTick} interval={Math.max(1, Math.floor(n / 6))} tick={{ fontSize: 10, fill: '#6e6e73' }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, Math.ceil(maxECe)]} tick={{ fontSize: 10, fill: '#6e6e73' }} axisLine={false} tickLine={false} width={40} />
               <ReferenceLine y={result.target} stroke={LIMIT} strokeDasharray="5 4" label={{ value: `${crop.short} limit ${one(result.target)}`, position: 'insideBottomRight', fontSize: 10, fill: LIMIT }} />
               <Tooltip content={<Tip unit="dS/m" a="habitECe" b="namakECe" />} />
               <Line type="monotone" dataKey="habitECe" stroke={HABIT} strokeWidth={2.5} dot={false} isAnimationActive={false} name="Habit" />
@@ -224,7 +224,7 @@ function ChartTitle({ title, unit, habit, namak, fmt }: { title: string; unit: s
       <p className="text-[13px] font-semibold text-ink/80">
         {title} <span className="font-normal text-ink/65">({unit})</span>
       </p>
-      <p className="font-mono text-xs tabular">
+      <p className="tabular text-xs tabular">
         <span style={{ color: HABIT }}>{habit !== undefined ? fmt(habit) : '–'}</span>
         <span className="text-ink/30"> / </span>
         <span style={{ color: TEAL }} className="font-semibold">{namak !== undefined ? fmt(namak) : '–'}</span>
@@ -239,7 +239,7 @@ function Tip({ active, payload, unit, a, b }: { active?: boolean; payload?: { pa
   if (p[a] === undefined) return null
   return (
     <div className="rounded-xl bg-ink px-3 py-2 text-xs text-salt shadow-lg">
-      <p className="font-mono text-[10px] text-salt/75">{dayLabel(String(p.date))}</p>
+      <p className="tabular text-[10px] text-salt/75">{dayLabel(String(p.date))}</p>
       <p>Habit {one(Number(p[a]))} {unit}</p>
       <p className="font-semibold">Namak {one(Number(p[b]))} {unit}</p>
     </div>
@@ -249,8 +249,8 @@ function Tip({ active, payload, unit, a, b }: { active?: boolean; payload?: { pa
 function Verdict({ big, label, sub, tone }: { big: string; label: string; sub: string; tone: 'teal' | 'red' | 'amber' }) {
   const c = { teal: 'text-teal-water', red: 'text-red-debt', amber: 'text-[#9a5d12]' }[tone]
   return (
-    <div className="rounded-3xl border border-sand-200 bg-salt p-4">
-      <p className={`font-display text-[28px] leading-none font-semibold tabular ${c}`}>{big}</p>
+    <div className="rounded-[28px] bg-salt p-6">
+      <p className={`text-[34px] leading-none font-semibold tracking-[-0.03em] tabular md:text-[44px] ${c}`}>{big}</p>
       <p className="mt-1.5 text-xs font-semibold text-ink/70">{label}</p>
       <p className="mt-0.5 text-[11px] text-ink/65">{sub}</p>
     </div>

@@ -33,7 +33,7 @@ export default function Why() {
     <div className="space-y-5">
       <div>
         <Eyebrow>Why it works</Eyebrow>
-        <h1 className="mt-2 font-display text-[34px] leading-[1.05] font-semibold text-teal-deep">
+        <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">
           Three problems hiding inside “water the farm”.
         </h1>
       </div>
@@ -57,8 +57,8 @@ export default function Why() {
       </Card>
 
       <Card>
-        <h2 className="font-display text-xl font-semibold">The maths</h2>
-        <ul className="mt-3 space-y-2.5 font-mono text-[13px] leading-relaxed text-ink/85">
+        <h2 className="text-[21px] font-semibold">The maths</h2>
+        <ul className="mt-3 space-y-2.5 tabular text-[13px] leading-relaxed text-ink/85">
           <li>ETc = Kc × ET₀ · 1 mm on 1 m² = 1 L</li>
           <li>Kc climate-adjusted: FAO-56 eq. 62 (wind, humidity, crop height)</li>
           <li>LF: holds root-zone ECe at the crop limit (FAO-29 four-layer concentration factors, FAO 1985b)</li>
@@ -76,7 +76,7 @@ export default function Why() {
       </Card>
 
       <Card>
-        <h2 className="font-display text-xl font-semibold">Crop numbers</h2>
+        <h2 className="text-[21px] font-semibold">Crop numbers</h2>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[440px] text-left text-[13px]">
             <thead className="text-[11px] text-ink/65">
@@ -88,7 +88,7 @@ export default function Why() {
                 <th className="font-semibold">Slope</th>
               </tr>
             </thead>
-            <tbody className="font-mono tabular">
+            <tbody className="tabular tabular">
               {CROP_LIST.map((c) => (
                 <tr key={c.id} className="border-t border-sand-200">
                   <td className="py-1.5 font-sans font-semibold">{c.name}</td>
@@ -110,7 +110,7 @@ export default function Why() {
       </Card>
 
       <Card>
-        <h2 className="font-display text-xl font-semibold">What’s real, what’s illustrative</h2>
+        <h2 className="text-[21px] font-semibold">What’s real, what’s illustrative</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           <SourceTag>Real · Live forecast · Open-Meteo</SourceTag>
           <SourceTag>Real · Historical weather · ERA5 via Open-Meteo</SourceTag>
@@ -123,7 +123,7 @@ export default function Why() {
       </Card>
 
       <Card>
-        <h2 className="font-display text-xl font-semibold">Assumptions & limits</h2>
+        <h2 className="text-[21px] font-semibold">Assumptions & limits</h2>
         <ul className="mt-3 list-disc space-y-1.5 pl-5 text-[14px] leading-relaxed text-ink/80">
           <li>Salt model: complete mixing in four root-zone layers, 40-30-20-10 % uptake, no capillary rise, good drainage, no salt from fertiliser or rain.</li>
           <li>Soil returns to field capacity after each daily drip irrigation (sand, θFC 0.12, FAO-56 Table 19 midpoint).</li>
@@ -136,7 +136,7 @@ export default function Why() {
       </Card>
 
       <Card className="bg-teal-deep text-salt">
-        <h2 className="font-display text-xl font-semibold">What it costs the farm</h2>
+        <h2 className="text-[21px] font-semibold">What it costs the farm</h2>
         <div className="mt-2">
           <Row k={<span className="text-salt/80">EC pen</span>} v="~AED 100, one-off" />
           <Row k={<span className="text-salt/80">App</span>} v="Free · works offline" />
@@ -146,7 +146,7 @@ export default function Why() {
       </Card>
 
       <Card>
-        <h2 className="font-display text-xl font-semibold">Sources</h2>
+        <h2 className="text-[21px] font-semibold">Sources</h2>
         <ul className="mt-3 space-y-2 text-[14px] leading-relaxed">
           <li>
             <A href={SRC.fao29}>FAO Irrigation & Drainage Paper 29</A> — Water quality for agriculture (Table 4, eq. 7 & 9, §2.4.2)
@@ -172,9 +172,9 @@ export default function Why() {
 function Problem({ n, title, children }: { n: string; title: string; children: ReactNode }) {
   return (
     <div className="flex gap-4">
-      <span className="font-display text-4xl leading-none font-semibold text-amber-warn">{n}</span>
+      <span className="w-9 shrink-0 text-[44px] leading-none font-semibold tracking-[-0.03em] text-amber-warn tabular">{n}</span>
       <div>
-        <h3 className="font-display text-lg font-semibold text-teal-deep">{title}</h3>
+        <h3 className="text-[19px] font-semibold text-ink">{title}</h3>
         <p className="mt-1 text-[14px] leading-relaxed text-ink/80">{children}</p>
       </div>
     </div>

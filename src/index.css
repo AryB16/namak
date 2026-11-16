@@ -1,36 +1,61 @@
 @import "tailwindcss";
 
 @theme {
-  --color-sand-50: #faf6ef;
-  --color-sand-100: #f4efe6;
-  --color-sand-200: #e9dfcc;
-  --color-sand-300: #d9c8a8;
-  --color-sand-500: #a88b5c;
-  --color-sand-700: #6b5638;
-  --color-ink: #1d1a16;
-  --color-teal-water: #0e4a4f;
-  --color-teal-deep: #08343a;
-  --color-teal-light: #2f8f8a;
-  --color-salt: #fffdf8;
-  --color-amber-warn: #d98b2b;
-  --color-red-debt: #b8432f;
-  --color-green-ok: #3a7337;
+  /* Apple-light palette. Names kept from v1 so every screen picks the new look up. */
+  --color-sand-50: #fbfbfd;
+  --color-sand-100: #f5f5f7; /* page */
+  --color-sand-200: #e8e8ed; /* fills, dividers */
+  --color-sand-300: #d2d2d7;
+  --color-sand-500: #86868b;
+  --color-sand-700: #6e6e73; /* secondary text */
+  --color-ink: #1d1d1f;
+  --color-teal-water: #0a6f69; /* the one accent: water */
+  --color-teal-deep: #1d1d1f; /* headings / dark surfaces */
+  --color-teal-light: #5fd3c6; /* glow on dark */
+  --color-salt: #ffffff; /* surfaces */
+  --color-amber-warn: #e08a1e;
+  --color-red-debt: #c0362c;
+  --color-green-ok: #2e7d32;
+  --color-night: #000000;
+  --color-night-2: #1d1d1f;
+  --color-glow-water: #5fd3c6;
+  --color-glow-salt: #ffb547;
 
-  --font-display: "Fraunces Variable", "Fraunces", Georgia, serif;
-  --font-sans: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* SF Pro on Apple devices (system font); Inter as the closest match elsewhere. */
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  --ease-apple: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 html {
   background: var(--color-sand-100);
   color: var(--color-ink);
   -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   font-family: var(--font-sans);
   min-height: 100dvh;
+  letter-spacing: -0.01em;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  letter-spacing: -0.025em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 .tabular {
@@ -48,12 +73,12 @@ body {
 .salt-slider::-webkit-slider-runnable-track {
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #3a7337 0%, #3a7337 3%, #d98b2b 33%, #b8432f 100%);
+  background: linear-gradient(90deg, #2e7d32 0%, #2e7d32 3%, #e08a1e 33%, #c0362c 100%);
 }
 .salt-slider::-moz-range-track {
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #3a7337 0%, #3a7337 3%, #d98b2b 33%, #b8432f 100%);
+  background: linear-gradient(90deg, #2e7d32 0%, #2e7d32 3%, #e08a1e 33%, #c0362c 100%);
 }
 .salt-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -62,15 +87,16 @@ body {
   height: 34px;
   border-radius: 999px;
   background: var(--color-salt);
-  border: 3px solid var(--color-teal-deep);
-  box-shadow: 0 4px 12px -2px rgba(8, 52, 58, 0.4);
+  border: 0;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.04), 0 3px 8px rgba(0, 0, 0, 0.15), 0 3px 1px rgba(0, 0, 0, 0.06);
 }
 .salt-slider::-moz-range-thumb {
   width: 30px;
   height: 30px;
   border-radius: 999px;
   background: var(--color-salt);
-  border: 3px solid var(--color-teal-deep);
+  border: 0;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
 .salt-slider:focus-visible {
   outline: 3px solid var(--color-amber-warn);

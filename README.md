@@ -32,6 +32,10 @@ Everyone asks *“how much water does the crop need?”* In the desert that is o
 
 ## What it does (6 screens, mobile-first, no login)
 
+First visit opens a short apple.com-style scrolling tour (the three problems, the salt debt building up as you scroll,
+the results), then the dashboard. Returning visitors land straight on the dashboard; the tour is one tap away.
+
+
 | Screen | What you see |
 |---|---|
 | **Tomorrow** | Total watering time, a card per valve (“Valve 1 · Palms · 95 min · 00:00 → 01:35”), one-line *why* (heat + salt), a Salt Debt gauge, blend advice, and the 7-day plan with repayment days marked. |
@@ -202,7 +206,8 @@ set -a; . ./.env.local; set +a; vercel dev
 Deploy: `vercel env add GEMINI_API_KEY production`, then `vercel --prod`. Refresh the bundled weather snapshot with
 `node scripts/snapshot-weather.mjs`; regenerate the recorded voice samples with `npx tsx scripts/make-sample-voice.mts`.
 
-**Stack:** Vite · React 19 · TypeScript · Tailwind v4 · Recharts · vite-plugin-pwa · Vitest · Vercel functions · Gemini.
+**Stack:** Vite · React 19 · TypeScript · Tailwind v4 · Motion (animation) · Recharts · vite-plugin-pwa · Vitest · Vercel functions · Gemini.
+Type: the device's system font (SF Pro on Apple devices), Inter elsewhere. All animation respects `prefers-reduced-motion`.
 
 ## Sources
 

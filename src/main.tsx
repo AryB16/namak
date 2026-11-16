@@ -1,17 +1,17 @@
+import { MotionConfig } from 'motion/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import '@fontsource-variable/fraunces/index.css'
-import '@fontsource/ibm-plex-sans/latin-400.css'
-import '@fontsource/ibm-plex-sans/latin-600.css'
-import '@fontsource/ibm-plex-mono/latin-500.css'
+import '@fontsource-variable/inter/index.css'
 import './index.css'
 import App from './App.tsx'
 import { AppProvider } from './state.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AppProvider>
-      <App />
-    </AppProvider>
+    <MotionConfig reducedMotion="user">
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </MotionConfig>
   </StrictMode>,
 )

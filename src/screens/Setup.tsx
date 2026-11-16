@@ -75,7 +75,7 @@ export default function Setup() {
     <div className="space-y-5">
       <div>
         <Eyebrow>Farm setup · once</Eyebrow>
-        <h1 className="mt-2 font-display text-[34px] leading-[1.05] font-semibold text-teal-deep">Your farm</h1>
+        <h1 className="mt-2 text-[34px] leading-[1.05] font-semibold text-ink md:text-[48px]">Your farm</h1>
         <p className="mt-2 text-[15px] text-ink/70">
           The owner sets this up once. Everything is saved on this phone; no account needed.
         </p>
@@ -85,7 +85,7 @@ export default function Setup() {
       </div>
 
       <Card className="space-y-4">
-        <h2 className="font-display text-xl font-semibold">Place & water</h2>
+        <h2 className="text-[21px] font-semibold">Place & water</h2>
         <Field label="Location" hint="Weather comes from Open-Meteo for this point.">
           <select
             className={inputCls}
@@ -137,12 +137,12 @@ export default function Setup() {
           <Card key={v.id} className="space-y-4">
             <div className="flex items-center justify-between gap-2">
               <input
-                className="min-h-11 w-40 rounded-xl border border-transparent bg-transparent font-display text-xl font-semibold hover:border-sand-300"
+                className="min-h-11 w-40 rounded-xl border border-transparent bg-transparent text-[21px] font-semibold hover:border-sand-300"
                 value={v.name}
                 aria-label="Valve name"
                 onChange={(e) => setValve(v.id, { name: e.target.value })}
               />
-              <span className="font-mono text-xs text-ink/65">{int(valveArea(v))} m²</span>
+              <span className="tabular text-xs text-ink/65">{int(valveArea(v))} m²</span>
             </div>
             <Field label="Crop">
               <select className={inputCls} value={v.cropId} onChange={(e) => setValve(v.id, { cropId: e.target.value as CropId })}>
